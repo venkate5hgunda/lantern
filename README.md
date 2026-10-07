@@ -169,3 +169,9 @@ Executed checks and their limits are recorded in
 Android-camera-to-Chromium gate is documented in
 [the Android README](android/README.md#actual-camera-to-browser-gate).
 The shared wire contract is [docs/protocol.md](docs/protocol.md).
+
+## License
+
+Original project code and assets are licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 Venkatesh Gunda.
+Third-party code, assets, and content remain subject to their respective licenses.
