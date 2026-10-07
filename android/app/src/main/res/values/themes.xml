@@ -1,0 +1,17 @@
+<resources>
+    <style name="Theme.Lantern" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/lantern_primary</item>
+        <item name="colorOnPrimary">@color/lantern_on_primary</item>
+        <item name="colorSecondary">@color/lantern_primary</item>
+        <item name="colorSecondaryContainer">@color/lantern_surface_variant</item>
+        <item name="colorOnSecondaryContainer">@color/lantern_on_surface</item>
+        <item name="colorSurface">@color/lantern_surface</item>
+        <item name="colorOnSurface">@color/lantern_on_surface</item>
+        <item name="colorSurfaceVariant">@color/lantern_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/lantern_secondary</item>
+        <item name="colorOutline">@color/lantern_outline</item>
+        <item name="android:windowBackground">@color/lantern_surface</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+</resources>

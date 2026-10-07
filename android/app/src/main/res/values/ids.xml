@@ -1,0 +1,27 @@
+<resources>
+    <item type="id" name="setup_title"/>
+    <item type="id" name="setup_progress"/>
+    <item type="id" name="setup_next"/>
+    <item type="id" name="setup_back"/>
+    <item type="id" name="camera_name"/>
+    <item type="id" name="identity_choose"/>
+    <item type="id" name="identity_password"/>
+    <item type="id" name="identity_import"/>
+    <item type="id" name="permissions_request"/>
+    <item type="id" name="app_settings"/>
+    <item type="id" name="camera_start"/>
+    <item type="id" name="camera_health"/>
+    <item type="id" name="camera_preview"/>
+    <item type="id" name="camera_address"/>
+    <item type="id" name="pair_generate"/>
+    <item type="id" name="pair_code"/>
+    <item type="id" name="pair_countdown"/>
+    <item type="id" name="viewer_confirm"/>
+    <item type="id" name="setup_finish"/>
+    <item type="id" name="help_action"/>
+    <item type="id" name="camera_settings"/>
+    <item type="id" name="camera_pause"/>
+    <item type="id" name="camera_stop"/>
+    <item type="id" name="origins_input"/>
+    <item type="id" name="settings_save"/>
+</resources>

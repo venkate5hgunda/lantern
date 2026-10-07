@@ -1,0 +1,9 @@
+<resources>
+    <color name="lantern_primary">#9AD5B8</color>
+    <color name="lantern_on_primary">#123526</color>
+    <color name="lantern_surface">#121C17</color>
+    <color name="lantern_on_surface">#E1EBE3</color>
+    <color name="lantern_surface_variant">#25332A</color>
+    <color name="lantern_secondary">#BCCBC0</color>
+    <color name="lantern_outline">#8C9C91</color>
+</resources>
