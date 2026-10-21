@@ -39,6 +39,7 @@ Then follow [Set up and test Lantern](docs/setup-and-test.md) for the five-step 
 
 | Topic | Page |
 | --- | --- |
+| Product requirements, architecture and milestones | [docs/product/milestones.md](docs/product/milestones.md) · unlisted viewer path `/review.html` |
 | What works today and what doesn't | [docs/scope.md](docs/scope.md) |
 | First-camera walkthrough | [docs/setup-and-test.md](docs/setup-and-test.md) |
 | Toolchain and build commands | [docs/build.md](docs/build.md) |
