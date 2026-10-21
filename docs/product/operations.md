@@ -47,3 +47,7 @@ This is an in-app lock-screen style, not Android's secure lock screen. Pressing 
 ## Install the viewer
 
 Open the HTTPS viewer, use its Install action when offered, or the browser's Install/Add to Home Screen menu. The cached shell opens without internet; live cameras still need their reachable network. Use Remember cameras on this device only on trusted devices. Tap Watch to start a viewing session and request supported notification permission. There is no generic browser permission for unlimited background execution; service-worker push provides background event handling under OS policy. On iPhone, install to the Home Screen before enabling push.
+
+## Installable Android builds
+
+Use the signed APK from GitHub Releases. Follow [release installation and update guidance](../releases.md), verify checksum/signing identity and preserve evidence before changing from a debug installation. Release and debug signatures differ. Future tag automation is prepared but remains gated until repository signing secrets are configured by the owner.

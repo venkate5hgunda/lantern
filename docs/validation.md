@@ -11,6 +11,10 @@ Managed Linux workspace, JDK 17, Android SDK API 35 and Node 24. The PWA viewer,
 
 No physical Android model inference/accuracy, OEM background lifetime, OLED behavior, actual push-vendor delivery, network backup soak or power-loss qualification was performed. Background push needs browser permission, platform support and internet access. Replication is eventual while peers are reachable and covers bounded JPEG snapshots. Continuous video, unique-person/face recognition and suspicious-activity classification remain planned. Complete the device acceptance checklist before relying on these features.
 
+## Android release publication
+
+The signed `v0.2.0-alpha.1` prerelease uses version code 2 and a dedicated stable release signing key. Private key material stays outside the repository and public release assets. Repository Actions secrets are inaccessible to the connected integration (HTTP 403); tag automation is prepared and disabled until the owner configures signing secrets. Publication uses the locally verified release build. Hosted workflow execution and physical install/update compatibility remain separate gates.
+
 # Previous validation — 20 October 2026
 
 Managed Linux workspace, JDK 17 / Android SDK API 35 / Node 24. This receipt supersedes current-feature status in the historical receipt below; historical hardware results remain dated evidence, not re-executed checks.

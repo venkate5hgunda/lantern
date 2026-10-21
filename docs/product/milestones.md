@@ -81,7 +81,10 @@ A snapshot-first slice is implemented now using finalized JPEG evidence and boun
 ## M6 — Release qualification and intuitive operations
 
 - [ ] Reproducible clean setup by an operator unfamiliar with the code.
-- [ ] Signed APK release process, update/migration/rollback guide and embedded asset verification.
+- [ ] Physical upgrade/rollback qualification preserving evidence and encryption keys.
+- [x] Signed prerelease APK, signature/checksum/source receipts and explicit debug-to-release migration guide.
+- [x] Prepare gated GitHub tag workflow; repository signing secrets require owner configuration because the integration cannot access them.
+- [ ] Execute hosted release automation after secrets are configured; qualify device update/rollback behavior.
 - [ ] S23 Plus and Redmi/MIUI: power, permissions, thermal, background and 24-hour soak tests.
 - [ ] Real Safari, Firefox, Chromium and TV input/audio/certificate verification.
 - [x] Implement encrypted Web Push directly from camera to every subscribed viewer.

@@ -12,8 +12,8 @@ android {
         applicationId = "dev.lantern.peer"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 2
+        versionName = "0.2.0-alpha.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -21,6 +21,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs {
+        create("release") {
+            System.getenv("LANTERN_KEYSTORE_PATH")?.let { storeFile = file(it) }
+            storePassword = System.getenv("LANTERN_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("LANTERN_KEY_ALIAS")
+            keyPassword = System.getenv("LANTERN_KEY_PASSWORD")
+        }
+    }
+    buildTypes.getByName("release") {
+        signingConfig = signingConfigs.getByName("release")
+        isMinifyEnabled = false
+        isDebuggable = false
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
     androidResources { noCompress += "tflite" }
     packaging.resources.excludes.add("META-INF/versions/**")
@@ -37,6 +50,15 @@ val checkViewerAssets = tasks.register("checkViewerAssets") {
     }
 }
 tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(checkViewerAssets) }
+val checkReleaseSigning = tasks.register("checkReleaseSigning") {
+    doLast {
+        for (name in listOf("LANTERN_KEYSTORE_PATH", "LANTERN_KEYSTORE_PASSWORD", "LANTERN_KEY_ALIAS", "LANTERN_KEY_PASSWORD")) {
+            check(!System.getenv(name).isNullOrBlank()) { "Release signing requires $name; see docs/releases.md" }
+        }
+        check(file(System.getenv("LANTERN_KEYSTORE_PATH")).isFile) { "Release keystore not found" }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(checkReleaseSigning) }
 tasks.withType<Test>().configureEach {
     val scratch = layout.buildDirectory.dir("test-runtime").get().asFile
     doFirst { scratch.mkdirs() }

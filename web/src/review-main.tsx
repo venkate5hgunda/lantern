@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import requirements from "../../docs/product/requirements.md?raw";
 import notificationsPwa from "../../docs/product/notifications-pwa.md?raw";
+import androidReleases from "../../docs/releases.md?raw";
 import peerBackups from "../../docs/product/peer-backups.md?raw";
 import managedSetup from "../../docs/product/managed-setup.md?raw";
 import architecture from "../../docs/product/architecture.md?raw";
@@ -11,7 +12,7 @@ import validation from "../../docs/validation.md?raw";
 import { defaultFeatures, loadFeatures, saveFeatures, type Features } from "./features";
 import "./styles.css";
 import "./review.css";
-const documents = { "Easy setup": managedSetup, "PWA & alerts": notificationsPwa, "Peer backups": peerBackups, Requirements: requirements, Architecture: architecture, Milestones: milestones, Operations: operations, Validation: validation };
+const documents = { "Easy setup": managedSetup, "Android APK": androidReleases, "PWA & alerts": notificationsPwa, "Peer backups": peerBackups, Requirements: requirements, Architecture: architecture, Milestones: milestones, Operations: operations, Validation: validation };
 type DocumentName = keyof typeof documents;
 // Deliberately supports only repository Markdown. Raw HTML is always rendered as text.
 function Markdown({ source }: { source: string }) {

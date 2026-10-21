@@ -31,6 +31,8 @@
 
 ## 🚀 Quick start
 
+Install the signed Android APK from [GitHub Releases](https://github.com/venkate5hgunda/lantern/releases). See [installation, updates and release signing](docs/releases.md). Prereleases still require the physical-device checks.
+
 ```sh
 cd web && npm ci && npm run build          # viewer, embedded into the APK
 cd ../android && ./gradlew --no-daemon :app:assembleDebug

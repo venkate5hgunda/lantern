@@ -143,6 +143,8 @@ Restore emulator network settings if reusing that dedicated test instance.
 
 ## Person detection, notifications and camera redundancy
 
+Signed installable APKs are published through [GitHub Releases](https://github.com/venkate5hgunda/lantern/releases). [Release guidance](../docs/releases.md) covers install/update compatibility, checksums, signing-key backup and the optional tag workflow.
+
 Camera settings expose opt-in local person detection and Manage redundant camera backups. The bundled EfficientDet Lite0 model is pinned and licensed in `app/src/main/assets/models/README.md`. Two positive samples confirm presence; three misses clear it. Detection is sampled while armed, pauses at severe thermal status and does not identify people. Confirmed events wake the foreground ambient screen, save a snapshot and enqueue encrypted Web Push to all active subscribed viewers. Camera/microphone permissions and the visible Android foreground service remain necessary; battery optimization settings cannot guarantee OEM process lifetime.
 
 Backup pairing configures two separately authorized directions using the receiving phone's certificate fingerprint and a fresh physical code. Snapshot transfers are encrypted, resumable, integrity checked and bounded by quotas. Keep both phone addresses reachable and their foreground capture services running. See [operations](../docs/product/operations.md), [PWA alerts](../docs/product/notifications-pwa.md) and [backup recovery](../docs/product/peer-backups.md) for complete setup and limitations. App uninstall destroys its private keys and local evidence; upgrade with the same signing identity instead.
