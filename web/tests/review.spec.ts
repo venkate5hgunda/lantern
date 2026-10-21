@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+// These protocol/layout fixtures use request routing; PWA behavior is tested separately.
+test.use({ serviceWorkers: "block" });
 import AxeBuilder from "@axe-core/playwright";
 
 test("review embeds the source contract and keeps unsupported switches disabled", async ({ page }) => {
@@ -10,7 +12,7 @@ test("review embeds the source contract and keeps unsupported switches disabled"
   await page.getByRole("link", { name: "Architecture", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Existing system and streaming decision" })).toBeVisible();
   await page.getByRole("link", { name: "Controls", exact: true }).click();
-  await expect(page.getByLabel("Encrypted peer backups", { exact: false })).toBeDisabled();
+  await expect(page.getByLabel("Continuous MP4 recording", { exact: false })).toBeDisabled();
   await page.getByLabel("Foreground doorbell alerts").uncheck();
   await page.getByLabel("Connection details").check();
   await page.reload();

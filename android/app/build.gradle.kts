@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -20,13 +22,16 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     testOptions.unitTests.isIncludeAndroidResources = true
+    androidResources { noCompress += "tflite" }
     packaging.resources.excludes.add("META-INF/versions/**")
     sourceSets.getByName("main").assets.srcDir("../../web/dist")
 }
 
 val checkViewerAssets = tasks.register("checkViewerAssets") {
     doLast {
-        check(file("../../web/dist/index.html").isFile && file("../../web/dist/review.html").isFile) {
+        val model = file("src/main/assets/models/efficientdet-lite0.tflite")
+        check(model.isFile && MessageDigest.getInstance("SHA-256").digest(model.readBytes()).joinToString("") { "%02x".format(it) } == "2e04c53bfeac0ac2a30c057c7e2a777594ce39baaac35a92f74fb1e8c4fc4e0b") { "Person model missing or hash mismatch; see assets/models/README.md" }
+        check(file("../../web/dist/index.html").isFile && file("../../web/dist/review.html").isFile && file("../../web/dist/sw.js").isFile) {
             "Browser assets missing: build lantern/web first (npm run build)."
         }
     }
@@ -44,6 +49,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
     implementation("io.github.webrtc-sdk:android:125.6422.07")
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

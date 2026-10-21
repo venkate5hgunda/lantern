@@ -1,4 +1,17 @@
-# Current validation — 20 October 2026
+# Current validation — 21 October 2026
+
+Managed Linux workspace, JDK 17, Android SDK API 35 and Node 24. The PWA viewer, per-viewer encrypted event push, optional local person detection and bidirectional encrypted snapshot replication are implemented. This receipt supersedes feature-status claims in older receipts.
+
+- 60 viewer unit tests and the production TypeScript/Vite build pass. Output includes both HTML entrypoints, manifest, icons and versioned service worker. Both HTML pages are explicitly precached; camera API/media responses are excluded.
+- All 102 browser cases pass across Chromium, Firefox, WebKit and mobile/TV viewport profiles. Checks cover real encoded WebRTC, accessibility, PWA cache/offline launch, remembered-camera opt-in, notification consent/subscription and independent replica downloads. Notification tests use API doubles, not live push vendors. WebKit uses a real origin socket outage because native offline emulation fails even for a minimal literal-response worker in this environment.
+- 58 Android JVM tests pass, including the RFC 8291 encryption golden vector, VAPID signatures, durable viewer fan-out/revocation/retry, presence policy, metadata migration and actual SQLite/filesystem encrypted replication with lost commits, restart, quotas, newer-evidence preservation under old retries and corruption repair.
+- Android lint and debug application/instrumentation APK assembly pass. The pinned EfficientDet Lite0 checksum and viewer entrypoints are checked before Android build. Model instrumentation is compiled, not executed.
+- The dependency audit identified Vite build-tool advisories; the pinned version was updated from 7.3.6 to 7.3.7 and the audit now reports zero vulnerabilities.
+- Seven provisioning tests and six coordinator SQL tests pass. The coordinator remains a local foundation; the static review Site does not deploy managed phone enrollment or signaling.
+
+No physical Android model inference/accuracy, OEM background lifetime, OLED behavior, actual push-vendor delivery, network backup soak or power-loss qualification was performed. Background push needs browser permission, platform support and internet access. Replication is eventual while peers are reachable and covers bounded JPEG snapshots. Continuous video, unique-person/face recognition and suspicious-activity classification remain planned. Complete the device acceptance checklist before relying on these features.
+
+# Previous validation — 20 October 2026
 
 Managed Linux workspace, JDK 17 / Android SDK API 35 / Node 24. This receipt supersedes current-feature status in the historical receipt below; historical hardware results remain dated evidence, not re-executed checks.
 

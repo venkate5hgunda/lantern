@@ -59,7 +59,7 @@ class StorageTest {
         assertEquals(created.id, store.list().single().id)
         assertEquals("manual", store.json(created).getString("trigger"))
         assertEquals("/api/v1/events/${created.id}/snapshot", store.json(created).getString("snapshotPath"))
-        assertArrayEquals(image, store(context).snapshot(created.id))
+        store(context).use { assertArrayEquals(image, it.snapshot(created.id)) }
         store.close()
     }
 

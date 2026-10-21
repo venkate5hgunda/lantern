@@ -48,3 +48,8 @@ The proposed remote-friendly mode is direct-first with an explicitly configured,
 - Real Android-to-browser video/audio works on the same LAN, on separate NATs and with an intentionally blocked direct path.
 - Current direct/local setup remains functional without a Sites account.
 - Hosted snapshot/history/download uses a separately specified authenticated peer data channel or direct transport. Do not route media through the signaling queue or mark it implemented implicitly.
+
+
+## Current PWA and background alerts
+
+The static Sites viewer is now an installable PWA. Cameras can deliver encrypted background person/doorbell notifications directly to their registered browser push endpoints; this does not depend on the unfinished hosted coordinator transport. Pairing, live camera APIs and peer backup enrollment currently still use the direct/local mode. The private review Site's audience and project ID remain unchanged. Native person inference and camera-to-camera snapshot replication run on the phones, independently of the static host.

@@ -29,15 +29,15 @@ termination, thermal throttling or battery safety.
   microphone release on stop/disconnect.
 - Manual and owner-enabled one-minute JPEG snapshots with UTC metadata, durable private storage, byte/age/count retention and authenticated browser history/downloads.
 - Durable local doorbell press, foreground viewer polling, explicit answer and idempotent acknowledgement.
-- Foreground ambient display with dim shifting clock, significant-motion/touch wake and owner opt-out; no system-lock bypass or person classification.
+- Foreground ambient display with dim shifting clock, significant-motion/touch wake and owner opt-out; optional local person detection also wakes the foreground display.
+- Installable PWA viewer with offline shell, opt-in remembered cameras and per-camera encrypted Web Push to subscribed, authorized viewers.
+- Owner-enabled on-device person detection with presence/count analytics and event snapshots; no unique-person or face identity claims.
+- Bidirectional encrypted snapshot replication with resumable transfer, bounded retention, integrity reconciliation and independent replica downloads.
 - Unlisted `/review.html` with requirements, architecture, milestone ledger and scoped browser controls.
 - A locally tested Sites registry/signaling backend foundation, not yet integrated into Android or the viewer.
 - Responsive, keyboard-accessible viewer assets served by every phone. The
   same static bundle can be hosted elsewhere without becoming a camera hub.
 
-Person detection, motion/person-triggered recording, video clips, closed-browser notifications, encrypted peer replication, cloud uploads and
-owner recognition are **not implemented**. There is no automatic peer
-discovery or autonomous failover of a camera's stored events yet. Cameras are
-added explicitly by HTTPS address and paired individually.
+Continuous video recording, face recognition, unique-person tracking, suspicious-activity classification, cloud media uploads and automatic discovery remain planned. Cameras are added explicitly by HTTPS address; camera backup pairing configures both directions. Replication is eventual while phones are reachable, not a guarantee of zero data loss. See [PWA and notifications](product/notifications-pwa.md) and [peer backups](product/peer-backups.md).
 
 The approved recommended direction is GPT Sites setup/signaling with direct media. See [managed setup](product/managed-setup.md). Current camera setup still uses the direct/local identity flow until the managed integration passes its gates.

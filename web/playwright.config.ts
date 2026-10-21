@@ -17,7 +17,7 @@ export default defineConfig({
     { name: "tv-chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1920, height: 1080 } } },
   ],
   webServer: {
-    command: "npm exec vite preview -- --host 127.0.0.1 --port 4173 --strictPort",
+    command: "node tests/static-server.mjs",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: false,
     timeout: 30_000,

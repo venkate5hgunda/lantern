@@ -224,3 +224,25 @@ an image URL. Revocation prohibits further retrieval.
 The ring poll interval is five seconds only while the viewer is visible. Recent unanswered rings (under two minutes) get an incoming banner; all retained rings remain in history. Signaling still uses standard WebRTC. The browser ignores null and empty end-of-candidates notifications rather than sending them to the non-empty ICE route.
 
 The planned managed Sites protocol is separate from these camera APIs; see `coordinator/README.md` and `docs/product/managed-setup.md`. The coordinator is not an arbitrary camera API/media proxy.
+
+## Additive PWA, person and snapshot-replication capabilities
+
+`info.capabilities` optionally advertises `pushNotifications`, `analytics` and `peerBackup`. Older peers may omit them; clients hide unsupported controls. `personDetection` requires an owner-enabled initialized model. Person snapshot events add `trigger: "person"` and numeric `confidence` in [0,1]; manual/scheduled events retain null confidence.
+
+Viewer bearer grants authorize these endpoints:
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/v1/notifications` | Camera VAPID public key and this grant's subscription/queue status. |
+| `POST /api/v1/notifications` | Store this grant's standard PushSubscription JSON (`endpoint`, `keys.p256dh`, `keys.auth`); 204. |
+| `DELETE /api/v1/notifications` | Remove this grant's subscription and pending jobs; 204. |
+| `GET /api/v1/analytics` | Current-service-run presence/count observations, freshness, model and availability. |
+| `GET /api/v1/backup-status` | Targets, verified/pending counts, last reconciliation, errors and receiver quotas. |
+| `GET /api/v1/replica-events` | Bounded independently recoverable snapshot metadata on this camera. |
+| `GET /api/v1/replica-events/{64hex}/snapshot` | Locally decrypt and verify retained JPEG, or 404 for missing/expired/corrupt evidence. |
+
+Push endpoints are restricted to supported Google, Mozilla, Apple and Windows HTTPS push-provider hosts. Payloads use RFC 8291/8188 encryption and RFC 8292 VAPID signatures. Provider acceptance is not a delivery receipt. See [notification operations](product/notifications-pwa.md).
+
+Camera replication uses a separate credential domain; viewer grants cannot upload replicas. `POST /api/v1/backup/pair` consumes a physical single-use backup code plus source UUID and reverse origin/certificate pin/token/key, returning receiver UUID and independent directional token/key. Origins must be HTTPS with normal hostname validation and the exchanged exact leaf-certificate SHA-256 pins. Codes expire after two minutes with five attempts. Re-pair after certificate rotation.
+
+Backup bearer authorization is source-bound: `GET /api/v1/backup/inventory`, `POST /api/v1/backup/begin`, `POST /api/v1/backup/{64hex}/chunk` and `POST /api/v1/backup/{64hex}/commit`. Begin carries immutable source/event UUIDs, creation timestamp, trigger/confidence, plaintext size and SHA-256; ID is SHA-256 of source UUID + colon + event UUID. Chunk carries integer offset and base64url ciphertext data of at most 32 KiB. Begin/chunk return `received`; commit returns verified plaintext `sha256`. AES-256-GCM ciphertext includes nonce/tag with canonical manifest as AAD. The receiver reserves full size before accepting chunks, supports exact duplicate retries and acknowledges commit after verification and durable publication. Inventory checks ciphertext integrity for repair. See [replication and retention limits](product/peer-backups.md).

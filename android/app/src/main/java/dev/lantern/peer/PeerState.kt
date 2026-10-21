@@ -31,6 +31,8 @@ internal class PeerState(context: Context) {
     }
     fun name(): String = prefs.getString("name", "Lantern camera")!!
     fun identity(): Boolean = prefs.getBoolean("identity", false)
+    fun personDetection(): Boolean = prefs.getBoolean("personDetection", false)
+    fun personDetection(value: Boolean) { check(prefs.edit().putBoolean("personDetection", value).commit()) }
     fun ambientDisplay(): Boolean = prefs.getBoolean("ambientDisplay", true)
     fun ambientDisplay(value: Boolean) { check(prefs.edit().putBoolean("ambientDisplay", value).commit()) }
     fun automaticSnapshots(): Boolean = prefs.getBoolean("automaticSnapshots", false)
@@ -59,7 +61,7 @@ internal class PeerState(context: Context) {
     }
 }
 
-internal data class Event(val id: String, val created: Long, val trigger: String = "manual", val bytes: Long = 0)
+internal data class Event(val id: String, val created: Long, val trigger: String = "manual", val bytes: Long = 0, val confidence: Double? = null)
 internal data class SnapshotRetention(
     val maxItems: Int = 200,
     val maxBytes: Long = 128L * 1024 * 1024,
@@ -79,10 +81,10 @@ internal class EventStore(
     private val now: () -> Long = System::currentTimeMillis,
     private val availableBytes: () -> Long = { context.filesDir.usableSpace },
     private val syncDirectory: (File) -> Unit = ::syncDirectoryToDisk
-) : SQLiteOpenHelper(context, "events.db", null, 2) {
+) : SQLiteOpenHelper(context, "events.db", null, 3) {
     private val directory = File(context.filesDir, "snapshots").also { check(it.isDirectory || it.mkdirs()) }
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE events (id TEXT PRIMARY KEY, created INTEGER NOT NULL, trigger TEXT NOT NULL DEFAULT 'manual', bytes INTEGER NOT NULL DEFAULT 0)")
+        db.execSQL("CREATE TABLE events (id TEXT PRIMARY KEY, created INTEGER NOT NULL, trigger TEXT NOT NULL DEFAULT 'manual', bytes INTEGER NOT NULL DEFAULT 0, confidence REAL)")
         db.execSQL("CREATE INDEX events_recent ON events(created DESC)")
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -96,12 +98,13 @@ internal class EventStore(
                 }
             }
         }
+        if (oldVersion < 3) db.execSQL("ALTER TABLE events ADD COLUMN confidence REAL")
     }
     @Synchronized fun list(limit: Int = 50): List<Event> {
         require(limit in 1..10_000)
         val found = mutableListOf<Event>()
-        readableDatabase.rawQuery("SELECT id, created, trigger, bytes FROM events ORDER BY created DESC, rowid DESC LIMIT ?", arrayOf(limit.toString())).use {
-            while (it.moveToNext()) found.add(Event(it.getString(0), it.getLong(1), it.getString(2), it.getLong(3)))
+        readableDatabase.rawQuery("SELECT id, created, trigger, bytes, confidence FROM events ORDER BY created DESC, rowid DESC LIMIT ?", arrayOf(limit.toString())).use {
+            while (it.moveToNext()) found.add(Event(it.getString(0), it.getLong(1), it.getString(2), it.getLong(3), if (it.isNull(4)) null else it.getDouble(4)))
         }
         return found
     }
@@ -158,13 +161,14 @@ internal class EventStore(
             .put("maxAgeSeconds", retention.maxAgeMs / 1000).put("reserveBytes", retention.reserveBytes)
             .put("availableBytes", availableBytes()).put("kind", "snapshots")
     }
-    @Synchronized fun add(jpeg: ByteArray, trigger: String = "manual"): Event {
-        require(trigger in listOf("manual", "scheduled"))
+    @Synchronized fun add(jpeg: ByteArray, trigger: String = "manual", confidence: Double? = null): Event {
+        require(trigger in listOf("manual", "scheduled", "person"))
+        require(if (trigger == "person") confidence != null && confidence.isFinite() && confidence in 0.0..1.0 else confidence == null)
         require(jpeg.size in 5..8 * 1024 * 1024 &&
             jpeg[0] == 0xff.toByte() && jpeg[1] == 0xd8.toByte() && jpeg[2] == 0xff.toByte() &&
             jpeg[jpeg.lastIndex - 1] == 0xff.toByte() && jpeg.last() == 0xd9.toByte())
         maintain(jpeg.size.toLong())
-        val event = Event(UUID.randomUUID().toString(), now(), trigger, jpeg.size.toLong())
+        val event = Event(UUID.randomUUID().toString(), now(), trigger, jpeg.size.toLong(), confidence)
         val partial = File(directory, "${event.id}.partial")
         val final = File(directory, "${event.id}.jpg")
         try {
@@ -172,7 +176,7 @@ internal class EventStore(
             check(partial.renameTo(final))
             syncDirectory(directory)
             val values = android.content.ContentValues().apply {
-                put("id", event.id); put("created", event.created); put("trigger", trigger); put("bytes", event.bytes)
+                put("id", event.id); put("created", event.created); put("trigger", trigger); put("bytes", event.bytes); put("confidence", confidence)
             }
             check(writableDatabase.insertOrThrow("events", null, values) != -1L)
             return event
@@ -180,6 +184,6 @@ internal class EventStore(
     }
     fun json(event: Event): JSONObject = JSONObject()
         .put("id", event.id).put("deviceId", deviceId).put("createdAt", stamp(event.created))
-        .put("trigger", event.trigger).put("confidence", JSONObject.NULL)
+        .put("trigger", event.trigger).put("confidence", event.confidence ?: JSONObject.NULL)
         .put("snapshotPath", "/api/v1/events/${event.id}/snapshot")
 }

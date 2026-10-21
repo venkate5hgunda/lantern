@@ -27,6 +27,7 @@ import javax.net.ssl.SSLSocket
 internal object Identity {
     private const val ALIAS = "lantern-server"
     private fun store(): KeyStore = KeyStore.getInstance("AndroidKeyStore").also { it.load(null) }
+    fun fingerprint(): String = mediaHash(store().getCertificate(ALIAS).encoded)
     fun available(): Boolean = store().containsAlias(ALIAS)
     fun origins(): Set<String> = (store().getCertificate(ALIAS) as? X509Certificate)?.let(::certificateOrigins)
         ?: emptySet()
@@ -200,6 +201,7 @@ internal class SecureServer(
         clients.forEach { try { it.close() } catch (_: Exception) {} }
         pool.shutdownNow()
     }
+    fun awaitStopped() { pool.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS) }
     private fun serve(client: SSLSocket) {
         client.soTimeout = 35_000
         try {
@@ -262,6 +264,7 @@ internal class SecureServer(
             return Response.error(404, "not_found", "Not found")
         }
         val mime = when {
+            asset.endsWith(".webmanifest") -> "application/manifest+json"
             asset.endsWith(".html") -> "text/html; charset=utf-8"
             asset.endsWith(".js") -> "text/javascript; charset=utf-8"
             asset.endsWith(".css") -> "text/css; charset=utf-8"

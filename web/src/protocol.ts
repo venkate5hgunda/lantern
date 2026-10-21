@@ -33,6 +33,9 @@ export const InfoSchema = z.object({
     snapshots: z.boolean(),
     personDetection: z.boolean(),
     doorbell: z.boolean().optional(),
+    pushNotifications: z.boolean().optional(),
+    analytics: z.boolean().optional(),
+    peerBackup: z.boolean().optional(),
     rollingSnapshots: z.boolean().optional(),
   }),
 });
@@ -99,3 +102,13 @@ export const StorageStatusSchema = z.object({
   availableBytes: z.number().int().nonnegative(), automaticSnapshots: z.boolean(), error: z.string().nullable(),
 });
 export type StorageStatus = z.infer<typeof StorageStatusSchema>;
+
+export const NotificationConfigSchema = z.object({ publicKey: z.string().regex(/^[A-Za-z0-9_-]{87}$/), registered: z.boolean(), pending: z.number().int().nonnegative() });
+export const AnalyticsSchema = z.object({ deviceId: uuid, enabled: z.boolean(), available: z.boolean(), present: z.boolean(), people: z.number().int().nonnegative(), peakPeople: z.number().int().nonnegative(), observations: z.number().int().nonnegative(), lastSeen: timestamp.nullable(), sampledAt: timestamp.nullable(), error: z.string().nullable(), model: z.string(), window: z.string() });
+export const BackupStatusSchema = z.object({
+  desired: z.number().int().nonnegative(), quotaBytes: z.number().int().positive(), replicaBytes: z.number().int().nonnegative(),
+  targets: z.array(z.object({ deviceId: uuid, origin: z.string(), lastSync: timestamp.nullable(), verified: z.number().int().nonnegative(), pending: z.number().int().nonnegative(), error: z.string().nullable() })).max(4),
+});
+export const ReplicaHistorySchema = z.object({ replicas: z.array(z.object({
+  id: z.string().regex(/^[0-9a-f]{64}$/), evidence: z.object({ sourceDeviceId: uuid, eventId: uuid, created: z.number().int().positive(), trigger: z.enum(["manual", "scheduled", "person"]), confidence: z.number().finite().min(0).max(1).nullable(), plainBytes: z.number().int().positive().max(8 * 1024 * 1024), sha256: z.string().regex(/^[0-9a-f]{64}$/) }),
+})).max(50) });

@@ -1,6 +1,6 @@
 # Milestones and delivery ledger
 
-Last updated: 20 October 2026. A checked box means implemented, not physical-device qualification. This ledger must change in the same commit as capability or release-status changes.
+Last updated: 21 October 2026. A checked box means implemented, not physical-device qualification. This ledger must change in the same commit as capability or release-status changes.
 
 ## M0 — Reviewable product foundation
 
@@ -26,7 +26,7 @@ Last updated: 20 October 2026. A checked box means implemented, not physical-dev
 - [x] Owner display toggle; no Android lock bypass or background activity launch.
 - [x] Pure policy tests for noise, movement, sampling gaps and inactivity.
 - [ ] Physical OLED, brightness, rotation, large-font and sustained camera/display qualification.
-- [ ] Person-triggered wake when M4 supplies real person detections.
+- [x] Feed owner-enabled on-device person observations into ambient wake.
 
 ## M1.5 — Few-click Sites setup (now the recommended direction)
 
@@ -50,18 +50,24 @@ Approved: use GPT Sites for setup and signaling; keep local/direct mode availabl
 
 ## M3 — Encrypted peer backup and restore
 
-Depends on M2 finalized evidence and streaming HTTP hardening.
+A snapshot-first slice is implemented now using finalized JPEG evidence and bounded chunks. MP4/video replication still depends on M2 and the streaming expansion.
 
-- [ ] Explicit peer enrollment and backup-only grants.
-- [ ] Standard encrypted envelopes and owner recovery-key export.
-- [ ] Durable outbox, resumable bounded transfer, verified receipts, separate replica quota.
-- [ ] Viewer replication health and replica browsing.
-- [ ] Restore with source offline, corrupted chunks, expired grants, full storage and interrupted transfers.
+- [x] Single-use physical enrollment with bidirectional source-bound backup grants and pinned TLS.
+- [x] Keystore-sealed directional keys, AES-GCM evidence and authenticated metadata.
+- [x] Durable per-peer outbox, resumable chunks, verification receipts and separate replica quota.
+- [x] Automatic reconciliation/backoff, corrupt-copy repair and source-offline authenticated restore.
+- [x] Viewer replication health and stored peer evidence downloads.
+- [x] Automated snapshot interruption, quota, corruption, resume, receipt and revocation tests.
+- [ ] Physical multi-phone replication, power-loss durability and multiday restore qualification.
+
+- [ ] Owner recovery-key export and full device-state restore.
 
 ## M4 — Background presence and visitor analytics
 
-- [ ] Pin licensed person model/runtime and benchmark hardware throughput and temperature.
-- [ ] Bounded background frame sampler, person detector, anonymous tracker and presence transitions.
+- [x] Bundle and hash-pin licensed EfficientDet-Lite0 with standard on-device runtime.
+- [ ] Benchmark hardware throughput, detection accuracy and temperature.
+- [x] Bounded background sampler, person detector, debounced presence, confidence evidence and person wake.
+- [ ] Anonymous multi-frame visitor tracker and coverage-aware historical windows.
 - [ ] Coverage-aware time-window counts and searchable evidence links.
 - [ ] False-positive, missed-detection, occlusion and re-entry evaluation on representative consented recordings.
 
@@ -78,8 +84,19 @@ Depends on M2 finalized evidence and streaming HTTP hardening.
 - [ ] Signed APK release process, update/migration/rollback guide and embedded asset verification.
 - [ ] S23 Plus and Redmi/MIUI: power, permissions, thermal, background and 24-hour soak tests.
 - [ ] Real Safari, Firefox, Chromium and TV input/audio/certificate verification.
-- [ ] Optional native viewer or notification bridge decision for reliable closed-browser alerts.
+- [x] Implement encrypted Web Push directly from camera to every subscribed viewer.
+- [ ] Qualify actual closed-app vendor/OS notification delivery on supported devices.
 - [ ] Publish measured supported device/network matrix and complete backup/restore drill.
+
+## M7 — Installable PWA and background event alerts
+
+- [x] Manifest, standalone viewer, maskable icons and install guidance.
+- [x] Versioned offline shell with explicit updates; exclude private APIs/media from caches.
+- [x] Optional remembered authorizations with visible device/privacy scope.
+- [x] Notification consent from a viewing gesture; unsupported/denied states do not block video.
+- [x] Per-camera push scopes, VAPID keys, encrypted event fan-out and durable bounded retries.
+- [x] Viewer revocation/unsubscribe and safe notification click routing.
+- [ ] Physical installed-PWA, denied permission, force-stop and provider-outage acceptance.
 
 ## Change protocol
 

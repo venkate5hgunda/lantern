@@ -51,7 +51,7 @@ import java.util.Date
 import androidx.appcompat.app.AlertDialog
 
 class MainActivity : ComponentActivity() {
-    private enum class Page { SETUP, CAMERA, SETTINGS }
+    private enum class Page { SETUP, CAMERA, SETTINGS, BACKUPS }
     private lateinit var state: PeerState
     private lateinit var importer: IdentityImportModel
     private val progress by lazy { getSharedPreferences("owner-setup", MODE_PRIVATE) }
@@ -185,6 +185,7 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this) {
             if (importer.status.value == ImportState.Working) return@addCallback
             when {
+                page == Page.BACKUPS -> showSettings()
                 page == Page.SETTINGS -> if (complete()) showCamera() else showStep(readiness().firstMissing())
                 page == Page.CAMERA || step == SetupStep.NAME -> finish()
                 else -> showStep(SetupStep.entries[step.ordinal - 1])
@@ -366,6 +367,7 @@ class MainActivity : ComponentActivity() {
             Page.SETUP -> renderSetup()
             Page.CAMERA -> renderCamera()
             Page.SETTINGS -> renderSettings()
+            Page.BACKUPS -> renderBackups()
         }
         if (importer.status.value == ImportState.Working) disableForm(column)
         column.requestFocus()
@@ -685,6 +687,18 @@ class MainActivity : ComponentActivity() {
             } catch (_: Exception) { report(R.string.save_failed) }
         }
         column.addView(MaterialCheckBox(this).apply {
+            setText(R.string.person_detection)
+            isChecked = PeerService.instance?.personDetection() ?: state.personDetection()
+            minHeight = dp(48)
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.personDetection(enabled) else state.personDetection(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        })
+        text(R.string.person_detection_hint)
+        column.addView(MaterialCheckBox(this).apply {
             setText(R.string.ambient_display)
             isChecked = PeerService.instance?.ambientDisplay() ?: state.ambientDisplay()
             minHeight = dp(48)
@@ -709,6 +723,7 @@ class MainActivity : ComponentActivity() {
         }
         column.addView(automatic)
         text(R.string.snapshot_retention_hint)
+        button(R.string.backup_manage, secondary = true) { page = Page.BACKUPS; render() }
         text(R.string.viewers_title, true)
         grantsHost = LinearLayout(this).also {
             it.orientation = LinearLayout.VERTICAL
@@ -729,6 +744,57 @@ class MainActivity : ComponentActivity() {
                 })
         }
         button(R.string.back_camera, R.id.setup_back, true) { if (complete()) showCamera() else showStep(readiness().firstMissing()) }
+    }
+    private fun renderBackups() {
+        text(R.string.backup_title, true).id = R.id.setup_title
+        button(R.string.camera_settings, secondary = true) { showSettings() }
+        text(R.string.backup_intro)
+        val service = PeerService.instance
+        if (service == null || !Identity.available()) { text(R.string.backup_start_first); return }
+        text(getString(R.string.backup_fingerprint, Identity.fingerprint())).apply { typeface = Typeface.MONOSPACE }
+        button(R.string.backup_copy_pin, secondary = true) {
+            getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Camera certificate SHA-256", Identity.fingerprint()))
+        }
+        button(R.string.backup_generate, secondary = true) {
+            val code = service.newBackupCode()
+            secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_code_title)
+                .setMessage(getString(R.string.backup_code_message, code, Identity.fingerprint()))
+                .setPositiveButton(R.string.done, null))
+        }
+        val (originLayout, origin) = field(R.string.backup_peer_address, R.string.backup_peer_hint, View.generateViewId(), "")
+        val (pinLayout, pin) = field(R.string.backup_peer_pin, R.string.backup_pin_hint, View.generateViewId(), "")
+        val (codeLayout, code) = field(R.string.backup_peer_code, R.string.backup_code_hint, View.generateViewId(), "")
+        code.inputType = InputType.TYPE_CLASS_NUMBER
+        val ownAddress = progress.getString("address", "")?.takeIf { it in ownOrigins } ?: ownOrigins.firstOrNull().orEmpty()
+        val (ownLayout, own) = field(R.string.backup_own_address, R.string.backup_own_hint, View.generateViewId(), ownAddress)
+        var pairing = false
+        button(R.string.backup_pair, secondary = true) {
+            if (pairing) return@button
+            val peerOrigin = origin.text.toString().trim().removeSuffix("/")
+            val fingerprint = pin.text.toString().trim().lowercase(java.util.Locale.ROOT).replace(":", "").replace(" ", "")
+            val ownOrigin = own.text.toString().trim().removeSuffix("/")
+            val pairingCode = code.text.toString().trim()
+            originLayout.error = if (Origins.canonical(peerOrigin) == peerOrigin) null else getString(R.string.backup_address_error)
+            pinLayout.error = if (fingerprint.matches(Regex("[0-9a-f]{64}"))) null else getString(R.string.backup_pin_hint)
+            codeLayout.error = if (pairingCode.matches(Regex("[0-9]{6}"))) null else getString(R.string.backup_code_hint)
+            ownLayout.error = if (ownOrigin in ownOrigins) null else getString(R.string.backup_own_hint)
+            if (listOf(originLayout, pinLayout, codeLayout, ownLayout).any { it.error != null }) return@button
+            pairing = true; hideKeyboard(); code.setText("")
+            service.pairBackup(peerOrigin, fingerprint, pairingCode, ownOrigin) { result ->
+                pairing = false
+                if (!isFinishing && !isDestroyed) secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_title).setMessage(result).setPositiveButton(R.string.done, null))
+            }
+        }
+        button(R.string.backup_status, secondary = true) {
+            secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_status).setMessage(service.backupStatus()).setPositiveButton(R.string.done, null))
+        }
+        for ((id, address) in service.backupTargets()) {
+            text(address)
+            button(R.string.backup_unlink, secondary = true) {
+                secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_unlink).setMessage(R.string.backup_unlink_hint)
+                    .setNegativeButton(R.string.cancel, null).setPositiveButton(R.string.backup_unlink) { _, _ -> service.unlinkBackup(id); render() })
+            }
+        }
     }
     private fun startPeer() {
         if (!identity || ownOrigins.isEmpty()) { showStep(SetupStep.IDENTITY); return }

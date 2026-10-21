@@ -2,7 +2,7 @@
 
 # 🏮 Lantern
 
-**Your cameras. Your network.** Autonomous Android cameras with a direct browser viewer — no household server, no cloud, no relay.
+**Your cameras. Your network.** Autonomous Android cameras with a direct browser viewer — no household media server or relay. Optional event alerts use browser push providers.
 
 ![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84?style=for-the-badge)
 ![WebRTC](https://img.shields.io/badge/WebRTC-direct-b9e8bd?style=for-the-badge&labelColor=121815)
@@ -20,6 +20,9 @@
 - 📷 **Each phone is its own camera** — owns its HTTPS identity, authorizations and snapshots.
 - 🔐 **Pair with a code** — single-use six-digit codes, expiring revocable grants.
 - 🎥 **Direct viewing** — on-demand WebRTC video, explicit listen/talk audio, JPEG snapshots.
+- 📱 **Installable PWA** — offline viewer shell, optional remembered cameras and encrypted event notifications.
+- 👤 **Local person detection** — opt-in presence analytics, event snapshots and foreground display wake.
+- 💾 **Redundant snapshots** — encrypted, resumable camera-to-camera replication and independent recovery.
 - 🏠 **Private by design** — LAN or Meshnet; any host can serve the static viewer.
 
 <p align="center">
@@ -40,6 +43,8 @@ Then follow [Set up and test Lantern](docs/setup-and-test.md) for the five-step 
 | Topic | Page |
 | --- | --- |
 | Product requirements, architecture and milestones | [docs/product/milestones.md](docs/product/milestones.md) · unlisted viewer path `/review.html` |
+| PWA installation and event alerts | [docs/product/notifications-pwa.md](docs/product/notifications-pwa.md) |
+| Camera backup pairing and recovery | [docs/product/peer-backups.md](docs/product/peer-backups.md) |
 | What works today and what doesn't | [docs/scope.md](docs/scope.md) |
 | First-camera walkthrough | [docs/setup-and-test.md](docs/setup-and-test.md) |
 | Toolchain and build commands | [docs/build.md](docs/build.md) |

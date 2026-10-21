@@ -121,7 +121,16 @@ internal class CameraRtc(private val context: Context) {
                 val stream = ByteArrayOutputStream()
                 if (!YuvImage(nv21, ImageFormat.NV21, width, height, null)
                         .compressToJpeg(android.graphics.Rect(0, 0, width, height), 80, stream)) return null
-                return stream.toByteArray()
+                val jpeg = stream.toByteArray()
+                if (frame.rotation == 0) return jpeg
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size) ?: return null
+                val rotated = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height,
+                    android.graphics.Matrix().apply { postRotate(frame.rotation.toFloat()) }, true)
+                return try {
+                    ByteArrayOutputStream().use { output ->
+                        if (!rotated.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, output)) null else output.toByteArray()
+                    }
+                } finally { if (rotated !== bitmap) rotated.recycle(); bitmap.recycle() }
             } finally { i420.release() }
         } finally { frame.release() }
     }

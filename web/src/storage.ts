@@ -2,8 +2,22 @@ import { SavedPeersSchema, type SavedPeer } from "./protocol";
 
 const KEY = "lantern.peers.v1";
 
-export function loadPeers(storage: Storage = sessionStorage): { peers: SavedPeer[]; warning: string | null } {
+const REMEMBER = "lantern.remember.v1";
+export function remembersViewer(): boolean { try { return localStorage.getItem(REMEMBER) === "1"; } catch { return false; } }
+function viewerStorage(): Storage { return remembersViewer() ? localStorage : sessionStorage; }
+export function setRememberViewer(remember: boolean, peers: SavedPeer[]): string | null {
   try {
+    const data = SavedPeersSchema.parse(peers);
+    const target = remember ? localStorage : sessionStorage;
+    target.setItem(KEY, JSON.stringify(data));
+    if (remember) { localStorage.setItem(REMEMBER, "1"); sessionStorage.removeItem(KEY); }
+    else { localStorage.removeItem(REMEMBER); localStorage.removeItem(KEY); }
+    return null;
+  } catch { return "Could not change remembered-viewer settings. Check browser storage access."; }
+}
+export function loadPeers(storage?: Storage): { peers: SavedPeer[]; warning: string | null } {
+  try {
+    storage ??= viewerStorage();
     const raw = storage.getItem(KEY);
     if (!raw) return { peers: [], warning: null };
     const result = SavedPeersSchema.safeParse(JSON.parse(raw));
@@ -22,10 +36,11 @@ export function loadPeers(storage: Storage = sessionStorage): { peers: SavedPeer
   }
 }
 
-export function savePeers(peers: SavedPeer[], storage: Storage = sessionStorage): string | null {
+export function savePeers(peers: SavedPeer[], storage?: Storage): string | null {
   const parsed = SavedPeersSchema.safeParse(peers);
   if (!parsed.success) return "Camera settings were not saved because the registry is invalid.";
   try {
+    storage ??= viewerStorage();
     storage.setItem(KEY, JSON.stringify(parsed.data));
     return null;
   } catch {

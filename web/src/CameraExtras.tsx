@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { EvidenceStatus } from "./EvidenceStatus";
+import { enableNotifications, disableNotifications } from "./notifications";
 import { PeerApi, isUnauthorized } from "./api";
 import { CameraConnection } from "./connection";
 import { describeError, type Doorbell, type PeerInfo, type SavedPeer, type StorageStatus } from "./protocol";
@@ -9,10 +11,19 @@ export function CameraExtras({ peer, info, connection, alerts, onExpired }: {
   const [api] = useState(() => new PeerApi(peer.origin, peer.token));
   const [rings, setRings] = useState<Doorbell["rings"]>([]);
   const [storage, setStorage] = useState<StorageStatus | null>(null);
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [storageRevision, setStorageRevision] = useState(0);
   const [tick, setTick] = useState(Date.now);
+  useEffect(() => {
+    const changed = (event: Event) => {
+      const detail = (event as CustomEvent<{ deviceId: string; message: string }>).detail;
+      if (detail.deviceId === peer.deviceId) setNotificationMessage(detail.message);
+    };
+    window.addEventListener("lantern:notifications", changed);
+    return () => window.removeEventListener("lantern:notifications", changed);
+  }, [peer.deviceId]);
   useEffect(() => {
     if (!info?.capabilities.doorbell || !alerts) return;
     let operation: AbortController | null = null;
@@ -64,6 +75,7 @@ export function CameraExtras({ peer, info, connection, alerts, onExpired }: {
     setBusy(true);
     try {
       if (answer) {
+        if (info?.capabilities.pushNotifications) void enableNotifications(peer, api, true);
         await connection.connect(true);
         if (connection.getSnapshot().connection !== "connected") return;
       }
@@ -76,10 +88,12 @@ export function CameraExtras({ peer, info, connection, alerts, onExpired }: {
     } finally { setBusy(false); }
   }
   return <>
+    {info?.capabilities.pushNotifications && <section className="notification-controls" aria-label="Event notification settings"><p className="small muted">Enable person and doorbell alerts for this viewer, even while it is closed. Each registered viewer grants its own browser permission.</p><button onClick={() => { void enableNotifications(peer, api); }}>Enable event notifications</button><button className="quiet" onClick={() => { void disableNotifications(peer, api); }}>Disable event notifications</button>{notificationMessage && <p role="status" className="small">{notificationMessage}</p>}</section>}
     {alerts && recent && <section className="doorbell-banner" aria-label="Incoming doorbell"><p role="status"><strong>Someone rang the doorbell.</strong> <time dateTime={recent.createdAt}>{new Date(recent.createdAt).toLocaleTimeString()}</time></p><p className="small muted">Answer connects audio. Tap Listen and Talk to speak. Your microphone starts off.</p><div className="camera-controls"><button className="primary" disabled={busy} onClick={() => { void acknowledge(recent.id, true); }}>Answer doorbell</button><button disabled={busy} onClick={() => { void acknowledge(recent.id, false); }}>Dismiss ring</button></div></section>}
-    {info?.capabilities.doorbell && <p className="mic-notice">Doorbell alerts {alerts ? "work while this viewer is open and visible" : "are disabled for this browser"}. Closed tabs cannot receive rings.</p>}
+    {info?.capabilities.doorbell && <p className="mic-notice">Doorbell alerts {alerts ? "work while this viewer is open and visible" : "are disabled for this browser"}. Enable event notifications for delivery while closed.</p>}
     {alerts && rings.length > 0 && <details className="history"><summary>Doorbell history <span className="muted">{rings.length} recent</span></summary><ol className="event-list">{rings.map((ring) => <li key={ring.id}><time dateTime={ring.createdAt}>{new Date(ring.createdAt).toLocaleString()}</time><span>{ring.acknowledged ? "Acknowledged" : "Unanswered"}</span>{!ring.acknowledged && <button disabled={busy} onClick={() => { void acknowledge(ring.id, false); }}>Acknowledge ring</button>}</li>)}</ol></details>}
-    {storage && <details className="history"><summary>Local storage <span className="muted">{storage.items} snapshots</span></summary><div className="history-body"><p>{storage.automaticSnapshots ? "Automatic snapshots every minute while armed." : "Automatic snapshots off. Enable on the camera phone."}</p><p className="small muted">{(storage.bytes / 1048576).toFixed(1)} MiB used. Limits: {storage.maxItems} images, {storage.maxBytes / 1048576} MiB, {Math.round(storage.maxAgeSeconds / 86400)} days; earliest limit wins. {Math.floor(storage.availableBytes / 1048576)} MiB free; {storage.reserveBytes / 1048576} MiB reserved.</p><p className="small muted">Still images only. Continuous video and peer backups are planned.</p>{storage.error && <p role="alert" className="error">{storage.error}</p>}<button onClick={() => setStorageRevision((value) => value + 1)}>Refresh storage</button></div></details>}
+    {storage && <details className="history"><summary>Local storage <span className="muted">{storage.items} snapshots</span></summary><div className="history-body"><p>{storage.automaticSnapshots ? "Automatic snapshots every minute while armed." : "Automatic snapshots off. Enable on the camera phone."}</p><p className="small muted">{(storage.bytes / 1048576).toFixed(1)} MiB used. Limits: {storage.maxItems} images, {storage.maxBytes / 1048576} MiB, {Math.round(storage.maxAgeSeconds / 86400)} days; earliest limit wins. {Math.floor(storage.availableBytes / 1048576)} MiB free; {storage.reserveBytes / 1048576} MiB reserved.</p><p className="small muted">Still images only. Configure redundant copies in Android settings; continuous video remains planned.</p>{storage.error && <p role="alert" className="error">{storage.error}</p>}<button onClick={() => setStorageRevision((value) => value + 1)}>Refresh storage</button></div></details>}
+    <EvidenceStatus api={api} deviceId={peer.deviceId} analytics={!!info?.capabilities.analytics} backup={!!info?.capabilities.peerBackup} onExpired={onExpired} />
     {error && <p role="alert" className="error camera-extra-error">{error}</p>}
   </>;
 }

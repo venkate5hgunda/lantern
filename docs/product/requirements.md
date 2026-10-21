@@ -68,6 +68,17 @@ The recommended setup uses GPT Sites for registration and signaling, as approved
 
 The armed foreground camera defaults to an in-app ambient screen after 30 seconds without interaction or significant scene motion. Use a black background, low per-window brightness, hidden system bars and a dim clock/hint that moves broadly every 30 seconds. Significant motion or a tap returns to the camera controls; returning to quiet re-enters ambient. Restore system brightness and normal screen-timeout behavior when the app pauses, the camera stops, or the setting is disabled. Android camera settings expose the owner control.
 
-Motion wake uses bounded low-resolution luminance sampling independently of viewers. Ignore small sensor noise and compensate for uniform exposure shifts; require two significant consecutive observations. This is a display wake cue, not person detection or an intrusion alert. Person-triggered wake joins the same display-activity policy when a real person detector ships in M4.
+Motion wake uses bounded low-resolution luminance sampling independently of viewers. Ignore small sensor noise and compensate for uniform exposure shifts; require two significant consecutive observations. This is a display wake cue, not person detection or an intrusion alert. Owner-enabled person detection now supplies the same display activity signal.
 
 The initial implementation keeps the foreground display on at low brightness; it does not switch the physical panel completely off or unlock Android's keyguard. The hardware power button/system lock remains authoritative. True locked-device wake needs a separate OS/OEM/device-owner qualification. Pixel movement and dimming reduce persistent exposure; neither software nor OLED black can guarantee prevention of burn-in. Qualify clock placement, brightness, display wake and capture continuity on both target phones and large fonts/orientation changes.
+
+
+## PWA, notifications and redundancy additions — 20 October 2026
+
+The viewer must be an installable PWA with an offline static shell, explicit updates, manifest/icons, and optional remembered authorization. Camera responses and media must never be placed in its offline cache. Starting a viewing session requests notification consent from that gesture; unsupported/denied permission must not prevent video. Background delivery uses service-worker Web Push because browsers have no separate general background-execution permission.
+
+Person and doorbell events fan out to every active subscribed viewer. Consent is per viewer origin/device; enrollment is tied to the camera grant and revocation removes delivery authority. Encrypted vendor push carries event metadata only and never activates a microphone. Distinguish queued, accepted-by-provider and actually displayed notifications. Run real closed-app tests on each supported OS before claiming qualified background delivery.
+
+Snapshot backups are now bidirectional among explicitly paired phones, with durable encrypted outboxes, bounded chunk transfer, receipt verification, periodic reconciliation and repair. A camera must recover another camera's verified evidence while that source is offline. Show pending/offline/quota states; never imply that unreachable peers are in sync. Snapshot redundancy ships before video replication, using the finalized evidence already present. See `peer-backups.md` and `notifications-pwa.md` for scope, controls and acceptance gates.
+
+The initial person/presence model is now bundled and owner-enabled, independently of viewers, and feeds both event notifications and ambient person wake. Unique-person tracking, face recognition and activity rules remain planned. “People observed” must not be labelled as an exact unique-person count.

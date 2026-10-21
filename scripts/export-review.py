@@ -23,7 +23,7 @@ def main():
     if not manifest.is_file() or json.loads(manifest.read_text()).get("project_id") != expected["project_id"]:
         parser.error("Site checkout must already contain the matching project identity.")
     bundle = repository / "web/dist"
-    if not all((bundle / entry).is_file() for entry in ("index.html", "review.html")):
+    if not all((bundle / entry).is_file() for entry in ("index.html", "review.html", "sw.js", "manifest.webmanifest")):
         parser.error("Build web first with npm run build.")
     # Only dedicated generated trees are replaced, never checkout identity/Git.
     for target in (checkout / "dist", checkout / "source"):
@@ -33,9 +33,9 @@ def main():
             shutil.rmtree(target)
     shutil.copytree(bundle, checkout / "dist")
     shutil.copytree(repository / "docs", checkout / "source/docs")
-    for name in ("src", "tests"):
+    for name in ("src", "tests", "public"):
         shutil.copytree(repository / "web" / name, checkout / "source/web" / name)
-    for name in ("package.json", "package-lock.json", "vite.config.ts", "tsconfig.json", "playwright.config.ts", "index.html", "review.html"):
+    for name in ("package.json", "package-lock.json", "vite.config.ts", "tsconfig.json", "playwright.config.ts", "index.html", "review.html", "service-worker.js"):
         shutil.copyfile(repository / "web" / name, checkout / "source/web" / name)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repository, text=True).strip()
     (checkout / "SOURCE.json").write_text(json.dumps({"repository": "https://github.com/venkate5hgunda/lantern", "commit": revision}, indent=2) + "\n")

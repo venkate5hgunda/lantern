@@ -149,7 +149,7 @@ export class ReferenceCamera {
       try { await this.publisher.addIceCandidate(candidate); }
       catch (error) { this.failures.push(error instanceof Error ? error.message : String(error)); }
     });
-    await this.page.route(`${CAMERA_ORIGIN}/**`, async (route) => {
+    await this.page.context().route(`${CAMERA_ORIGIN}/**`, async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
       const headers = {

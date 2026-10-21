@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+// These protocol/layout fixtures use request routing; PWA behavior is tested separately.
+test.use({ serviceWorkers: "block" });
 const origin = "https://door.nord:8443";
 const deviceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ringId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -6,7 +8,7 @@ const token = "a".repeat(43);
 test("compatible camera shows and acknowledges a ring and reports snapshot limits", async ({ page }) => {
   let acknowledged = false;
   await page.addInitScript(({ origin, deviceId, token }) => sessionStorage.setItem("lantern.peers.v1", JSON.stringify([{ origin, deviceId, name: "Front door", token, expiresAt: "2099-01-01T00:00:00Z" }])), { origin, deviceId, token });
-  await page.route(`${origin}/**`, async (route) => {
+  await page.context().route(`${origin}/**`, async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     const headers = { "Access-Control-Allow-Origin": "http://127.0.0.1:4173", "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
@@ -30,12 +32,12 @@ test("compatible camera shows and acknowledges a ring and reports snapshot limit
   expect(acknowledged).toBe(true);
   await page.getByText("Local storage", { exact: false }).click();
   await expect(page.getByText("Automatic snapshots every minute while armed.")).toBeVisible();
-  await expect(page.getByText("Continuous video and peer backups are planned.", { exact: false })).toBeVisible();
+  await expect(page.getByText("continuous video remains planned.", { exact: false })).toBeVisible();
 });
 test("legacy cameras never receive unsupported API requests", async ({ page }) => {
   const requests: string[] = [];
   await page.addInitScript(({ origin, deviceId, token }) => sessionStorage.setItem("lantern.peers.v1", JSON.stringify([{ origin, deviceId, name: "Old camera", token, expiresAt: "2099-01-01T00:00:00Z" }])), { origin, deviceId, token });
-  await page.route(`${origin}/**`, async (route) => {
+  await page.context().route(`${origin}/**`, async (route) => {
     const path = new URL(route.request().url()).pathname;
     requests.push(path);
     const headers = { "Access-Control-Allow-Origin": "http://127.0.0.1:4173", "Access-Control-Allow-Headers": "Authorization, Content-Type" };

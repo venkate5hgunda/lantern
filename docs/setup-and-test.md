@@ -319,4 +319,10 @@ For product requirements, the approved Sites setup direction and the delivery le
 
 ## Ambient display
 
-Leave Lantern on the armed camera page. **Ambient display with significant-motion wake** defaults on in Camera settings. After 30 seconds without input/significant motion, the local preview yields to a black screen with a dim clock that shifts position every 30 seconds. Movement or a tap restores the controls; capture and live sessions continue independently. System brightness and screen-timeout behavior return when leaving the app or disabling the setting. Hardware lock remains Android-controlled. Person wake awaits the background person detector; motion wake does not label people.
+Leave Lantern on the armed camera page. **Ambient display with significant-motion wake** defaults on in Camera settings. After 30 seconds without input/significant motion, the local preview yields to a black screen with a dim clock that shifts position every 30 seconds. Movement or a tap restores the controls; capture and live sessions continue independently. System brightness and screen-timeout behavior return when leaving the app or disabling the setting. Hardware lock remains Android-controlled. Enable on-device person detection in Camera settings for confirmed-person wake and event snapshots; motion wake itself does not classify people.
+
+## PWA, person alerts and redundant backups
+
+The viewer is an installable PWA. Follow [PWA and notifications](product/notifications-pwa.md) to install, remember cameras on a trusted device and enable alerts for each viewer. Enable person detection in Android camera settings, then verify a confirmed-person snapshot and presence status. Physical model accuracy and push delivery need qualification on your devices.
+
+Follow [peer backup pairing](product/peer-backups.md) on two armed phones. Verify both directions, pending/verified counts and a recovered snapshot with the source disconnected. Replication covers bounded JPEG snapshot history; it does not record continuous video or synchronize system settings.
