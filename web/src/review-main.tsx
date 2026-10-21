@@ -70,7 +70,7 @@ function Review() {
         <div className="review-control"><label><input type="checkbox" checked={features.transportDetails} onChange={(event) => change({ ...features, transportDetails: event.target.checked })} /> Connection details</label><p>Show standard WebRTC and camera capability information in the viewer.</p></div>
         {["Continuous MP4 recording — M2", "Familiar faces and activity rules — M5"].map((label) => <div className="review-control" key={label}><label><input type="checkbox" disabled /> {label}</label><p>Planned. No runtime implementation is enabled by this page.</p></div>)}
         <button onClick={() => change({ ...defaultFeatures })}>Reset browser preferences</button>{notice && <p role="status">{notice}</p>}
-      </> : <Markdown source={documents[selected]} />}</article>
+      </> : <>{selected === "Android APK" && <p><a href="https://github.com/venkate5hgunda/lantern/releases/download/v0.2.0-alpha.1/lantern-0.2.0-alpha.1.apk">Download signed Android APK</a> · <a href="https://github.com/venkate5hgunda/lantern/releases/tag/v0.2.0-alpha.1">Release notes and checksums</a></p>}<Markdown source={documents[selected]} /></>}</article>
     </main><footer className="page-footer"><span>Lantern / living product specification</span><span>Update docs, capabilities and tests in the same commit.</span></footer>
   </div>;
 }

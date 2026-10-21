@@ -44,7 +44,7 @@ Use a stable owner-controlled PKCS#12 key. Keep an encrypted offline backup of t
 
 Then set the repository Actions variable `LANTERN_PUBLISH_RELEASES=true`. The workflow validates that `v<versionName>` matches the checked-in Android version, builds/tests the PWA, runs browser/provisioning/coordinator/native checks, builds a non-debuggable signed release, verifies/packages it and publishes immutable prerelease assets. Signing material is decoded only under the runner's temporary directory and removed afterward. Version code must increase with every Android update; never reuse a published tag or replace release assets.
 
-The first release is built and uploaded locally with the same checks because the integration cannot configure Actions secrets. It does not prove the hosted workflow has executed. Once configured, subsequent tags run the workflow. Manual dispatch must target an existing version tag.
+The first release is built and signed locally. A one-time GitHub-hosted job verifies its source tag, signature, pinned certificate and checksums, uploads the prepared public assets and checks their remote digests before publication. This avoids the managed environment’s missing credentials for GitHub’s separate upload host; no signing key is uploaded. The temporary staging branch is removed afterward. This qualifies hosted asset publication, not the full build-from-tag workflow. Once configured, subsequent tags run the workflow. Manual dispatch must target an existing version tag.
 
 ## Publish a locally verified version
 

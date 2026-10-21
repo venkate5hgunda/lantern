@@ -11,6 +11,9 @@ test("review embeds the source contract and keeps unsupported switches disabled"
   await expect(page.getByRole("heading", { name: "Few-click setup with GPT Sites" })).toBeVisible();
   await page.getByRole("link", { name: "Architecture", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Existing system and streaming decision" })).toBeVisible();
+  await page.getByRole("link", { name: "Android APK", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Download signed Android APK", exact: true })).toHaveAttribute("href", "https://github.com/venkate5hgunda/lantern/releases/download/v0.2.0-alpha.1/lantern-0.2.0-alpha.1.apk");
+  await expect(page.getByRole("link", { name: "Release notes and checksums", exact: true })).toHaveAttribute("href", "https://github.com/venkate5hgunda/lantern/releases/tag/v0.2.0-alpha.1");
   await page.getByRole("link", { name: "Controls", exact: true }).click();
   await expect(page.getByLabel("Continuous MP4 recording", { exact: false })).toBeDisabled();
   await page.getByLabel("Foreground doorbell alerts").uncheck();

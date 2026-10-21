@@ -13,9 +13,11 @@ No physical Android model inference/accuracy, OEM background lifetime, OLED beha
 
 ## Android release publication
 
+Published [v0.2.0-alpha.1](https://github.com/venkate5hgunda/lantern/releases/tag/v0.2.0-alpha.1) from source `3d749e2d148a1c949565986fb4d9f20f932136d6`. [GitHub-hosted publication run](https://github.com/venkate5hgunda/lantern/actions/runs/39554507313) succeeds. All four remote asset digests match; the public 87,664,922-byte APK download independently matches SHA-256 `3937cf3b83d09948ea26f91c8027c1b02a1d956a3c933e0e327eab89cf126b41` and passes signature verification. The temporary upload branch was deleted after publication.
+
 Release lint, all 58 native unit tests and signed release/instrumentation APK assembly pass. APK signature v2 verifies with the dedicated RSA-3072 release key; packaging verifies all embedded web bytes, version and non-debuggable status. Checksum verification passes for the APK and both public receipts. The release packager rejects a debug APK. Actionlint 1.7.7 validates the workflow; 24 PWA/review browser cases and 60 viewer unit tests pass after adding release guidance.
 
-The signed `v0.2.0-alpha.1` prerelease uses version code 2 and a dedicated stable release signing key. Private key material stays outside the repository and public release assets. Repository Actions secrets are inaccessible to the connected integration (HTTP 403); tag automation is prepared and disabled until the owner configures signing secrets. Publication uses the locally verified release build. Hosted workflow execution and physical install/update compatibility remain separate gates.
+The signed `v0.2.0-alpha.1` prerelease uses version code 2 and a dedicated stable release signing key. Private key material stays outside the repository and public release assets. Repository Actions secrets are inaccessible to the connected integration (HTTP 403); tag automation is prepared and disabled until the owner configures signing secrets. Publication uses the locally verified release build and a GitHub-hosted uploader that verifies source/tag, APK signature, version and local/remote digests. Direct CLI upload failed because the managed environment provides GitHub API proxy credentials but not upload-host credentials. Certificate verification uses standard PEM bytes across Android SDK versions. Full hosted build-from-tag execution and physical install/update compatibility remain separate gates.
 
 # Previous validation — 20 October 2026
 
