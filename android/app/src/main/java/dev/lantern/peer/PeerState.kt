@@ -31,6 +31,8 @@ internal class PeerState(context: Context) {
     }
     fun name(): String = prefs.getString("name", "Lantern camera")!!
     fun identity(): Boolean = prefs.getBoolean("identity", false)
+    fun ambientDisplay(): Boolean = prefs.getBoolean("ambientDisplay", true)
+    fun ambientDisplay(value: Boolean) { check(prefs.edit().putBoolean("ambientDisplay", value).commit()) }
     fun automaticSnapshots(): Boolean = prefs.getBoolean("automaticSnapshots", false)
     fun automaticSnapshots(value: Boolean) { check(prefs.edit().putBoolean("automaticSnapshots", value).commit()) }
     fun armed(): Boolean = prefs.getBoolean("armed", false)

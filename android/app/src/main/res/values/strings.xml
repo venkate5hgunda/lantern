@@ -136,4 +136,8 @@
     <string name="ring_doorbell">Ring doorbell</string>
     <string name="automatic_snapshots">Save a snapshot every minute while armed</string>
     <string name="snapshot_retention_hint">Local still images only. Keeps at most 200 images, 7 days or 128 MiB, with 64 MiB free space reserved. Oldest images rotate automatically. This is not continuous video or a peer backup.</string>
+    <string name="ambient_display">Ambient display with significant-motion wake</string>
+    <string name="ambient_display_hint">While Lantern is open and armed, dim to a black screen after 30 seconds. A dim clock shifts position; significant scene movement or touch wakes the controls. This reduces static pixel exposure but cannot guarantee against burn-in. It does not bypass Android lock security or wake a phone locked with the power button. Person-based wake awaits the person detector.</string>
+    <string name="ambient_wake">Camera ambient display. Tap to wake controls.</string>
+    <string name="ambient_clock">%1$s\nLantern armed · Tap to wake</string>
 </resources>

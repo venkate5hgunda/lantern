@@ -29,6 +29,7 @@ termination, thermal throttling or battery safety.
   microphone release on stop/disconnect.
 - Manual and owner-enabled one-minute JPEG snapshots with UTC metadata, durable private storage, byte/age/count retention and authenticated browser history/downloads.
 - Durable local doorbell press, foreground viewer polling, explicit answer and idempotent acknowledgement.
+- Foreground ambient display with dim shifting clock, significant-motion/touch wake and owner opt-out; no system-lock bypass or person classification.
 - Unlisted `/review.html` with requirements, architecture, milestone ledger and scoped browser controls.
 - A locally tested Sites registry/signaling backend foundation, not yet integrated into Android or the viewer.
 - Responsive, keyboard-accessible viewer assets served by every phone. The

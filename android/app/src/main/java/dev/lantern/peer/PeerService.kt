@@ -137,6 +137,9 @@ class PeerService : Service() {
         }
     }
     override fun onBind(intent: Intent?): IBinder? = null
+    fun lastSceneActivity(): Long = camera.lastSignificantMotionAt
+    fun ambientDisplay(): Boolean = state.ambientDisplay()
+    fun ambientDisplay(enabled: Boolean) { state.ambientDisplay(enabled) }
     fun preview(): org.webrtc.VideoTrack? = camera.preview()
     fun eglContext(): org.webrtc.EglBase.Context = camera.eglContext()
     fun newCode(): String = pairing.generate()

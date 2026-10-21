@@ -316,3 +316,7 @@ On the phone, open Camera settings and enable **Save a snapshot every minute whi
 Press **Ring doorbell** on the armed phone. An open, visible paired viewer polls compatible cameras every five seconds. **Answer doorbell** starts an audio session; tap **Listen** and **Talk** explicitly. **Dismiss ring** acknowledges it across viewers; a failed connection leaves it unanswered. Old/missed rings remain in the bounded doorbell history. Closed/background browser delivery is not guaranteed.
 
 For product requirements, the approved Sites setup direction and the delivery ledger, open the unlisted **`/review.html`** path on the same static host. The current direct/local setup above remains necessary until the Sites client integration is released.
+
+## Ambient display
+
+Leave Lantern on the armed camera page. **Ambient display with significant-motion wake** defaults on in Camera settings. After 30 seconds without input/significant motion, the local preview yields to a black screen with a dim clock that shifts position every 30 seconds. Movement or a tap restores the controls; capture and live sessions continue independently. System brightness and screen-timeout behavior return when leaving the app or disabling the setting. Hardware lock remains Android-controlled. Person wake awaits the background person detector; motion wake does not label people.

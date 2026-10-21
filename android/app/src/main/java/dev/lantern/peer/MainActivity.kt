@@ -21,6 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.ScrollView
@@ -31,6 +32,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
@@ -78,6 +80,10 @@ class MainActivity : ComponentActivity() {
         set(value) { importer.grantsBeforeCode = value }
     private var message: Int? = null
     private lateinit var root: LinearLayout
+    private val ambientPolicy = AmbientDisplayPolicy()
+    private lateinit var ambientHost: FrameLayout
+    private lateinit var ambientClock: TextView
+    private var ambientShowing = false
     private lateinit var column: LinearLayout
     private var banner: TextView? = null
     private var healthTitle: TextView? = null
@@ -95,6 +101,7 @@ class MainActivity : ComponentActivity() {
     private val tick = object : Runnable {
         override fun run() {
             updateLive()
+            updateAmbientDisplay()
             handler.postDelayed(this, 1_000)
         }
     }
@@ -154,7 +161,27 @@ class MainActivity : ComponentActivity() {
             view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, keyboard.bottom))
             insets
         }
-        setContentView(root)
+        val display = FrameLayout(this)
+        display.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        ambientHost = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.BLACK)
+            visibility = View.GONE
+            isClickable = true
+            isFocusable = true
+            contentDescription = getString(R.string.ambient_wake)
+            setOnClickListener { ambientPolicy.interact(SystemClock.elapsedRealtime()); updateAmbientDisplay() }
+        }
+        ambientClock = TextView(this).apply {
+            textSize = 24f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(android.graphics.Color.rgb(95, 105, 98))
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        ambientHost.addView(ambientClock, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER))
+        display.addView(ambientHost, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        setContentView(display)
+        ambientPolicy.interact(SystemClock.elapsedRealtime())
         onBackPressedDispatcher.addCallback(this) {
             if (importer.status.value == ImportState.Working) return@addCallback
             when {
@@ -181,6 +208,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (::root.isInitialized) {
             readIdentity()
+            ambientPolicy.interact(SystemClock.elapsedRealtime())
             render()
             handler.removeCallbacks(tick)
             handler.post(tick)
@@ -188,8 +216,58 @@ class MainActivity : ComponentActivity() {
     }
     override fun onPause() {
         handler.removeCallbacks(tick)
+        restoreDisplay()
         detachPreview()
         super.onPause()
+    }
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        ambientPolicy.interact(SystemClock.elapsedRealtime())
+        if (::ambientHost.isInitialized && ambientShowing) updateAmbientDisplay()
+    }
+    private fun restoreDisplay() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.attributes = window.attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE }
+        WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+        if (::ambientHost.isInitialized) ambientHost.visibility = View.GONE
+        if (::root.isInitialized) { root.visibility = View.VISIBLE; root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO }
+        ambientShowing = false
+    }
+    private fun updateAmbientDisplay() {
+        val service = PeerService.instance
+        if (page != Page.CAMERA || service?.health != "running" || !service.ambientDisplay()) {
+            if (ambientShowing) restoreDisplay()
+            else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            return
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val now = SystemClock.elapsedRealtime()
+        val ambient = ambientPolicy.ambient(now, service.lastSceneActivity())
+        if (ambient) {
+            if (!ambientShowing) {
+                detachPreview()
+                root.visibility = View.INVISIBLE
+                root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                ambientHost.visibility = View.VISIBLE
+                window.attributes = window.attributes.apply { screenBrightness = 0.01f }
+                WindowInsetsControllerCompat(window, window.decorView).apply {
+                    systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    hide(WindowInsetsCompat.Type.systemBars())
+                }
+                ambientShowing = true
+            }
+            ambientClock.text = getString(R.string.ambient_clock, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()))
+            // Broad bounded drift, different X/Y cycles, no fixed bright logo.
+            val phase = now / 30_000
+            val x = minOf(dp(64), ((ambientHost.width - ambientClock.width) / 2 - dp(24)).coerceAtLeast(0))
+            val y = minOf(dp(96), ((ambientHost.height - ambientClock.height) / 2 - dp(24)).coerceAtLeast(0))
+            ambientClock.translationX = ((phase * 7 % 13) / 6f - 1f) * x
+            ambientClock.translationY = ((phase * 5 % 17) / 8f - 1f) * y
+        } else if (ambientShowing) {
+            restoreDisplay()
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            updateLive()
+        }
     }
     override fun onDestroy() {
         detachPreview()
@@ -245,6 +323,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun render() {
+        if (ambientShowing) restoreDisplay()
         if (importer.status.value == ImportState.Working) {
             page = Page.SETUP
             step = SetupStep.IDENTITY
@@ -605,6 +684,18 @@ class MainActivity : ComponentActivity() {
                 report(R.string.settings_saved)
             } catch (_: Exception) { report(R.string.save_failed) }
         }
+        column.addView(MaterialCheckBox(this).apply {
+            setText(R.string.ambient_display)
+            isChecked = PeerService.instance?.ambientDisplay() ?: state.ambientDisplay()
+            minHeight = dp(48)
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.ambientDisplay(enabled) else state.ambientDisplay(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        })
+        text(R.string.ambient_display_hint)
         val automatic = MaterialCheckBox(this).apply {
             setText(R.string.automatic_snapshots)
             isChecked = PeerService.instance?.automaticSnapshots() ?: state.automaticSnapshots()
@@ -703,7 +794,7 @@ class MainActivity : ComponentActivity() {
             startingUntil = 0
             report(R.string.start_timeout)
         }
-        if (raw == "running" && !pausing && previewHost != null && renderer == null) attachPreview(service!!)
+        if (raw == "running" && !pausing && !ambientShowing && previewHost != null && renderer == null) attachPreview(service!!)
         if (raw != "running" && renderer != null) detachPreview()
         val grants = activeGrants()
         if (pairingCode != null && (service == null ||

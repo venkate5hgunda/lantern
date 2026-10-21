@@ -32,6 +32,16 @@ internal class CameraRtc(private val context: Context) {
     private val audioResources = mutableMapOf<String, Pair<AudioTrack, AudioSource>>()
     private var priorAudioRoute: Pair<Int, Boolean>? = null
     private var frameAt = 0L
+    private val motion = SignificantMotion()
+    @Volatile var lastSignificantMotionAt: Long = 0; private set
+    private fun sampleMotion(frame: VideoFrame.I420Buffer, at: Long) {
+        val sample = ByteArray(32 * 24)
+        val y = frame.dataY
+        for (row in 0 until 24) for (column in 0 until 32) {
+            sample[row * 32 + column] = y.get((row * frame.height / 24) * frame.strideY + column * frame.width / 32)
+        }
+        if (motion.observe(sample, at)) lastSignificantMotionAt = at
+    }
 
     fun preview(): VideoTrack? = synchronized(lock) { video }
     fun eglContext(): EglBase.Context = egl.eglBaseContext
@@ -68,6 +78,7 @@ internal class CameraRtc(private val context: Context) {
                     val now = SystemClock.elapsedRealtime()
                     if (synchronized(lock) { lastFrame == null || now - frameAt >= 1_000 }) {
                         val copy = frame.buffer.toI420()
+                        if (copy != null) sampleMotion(copy, now)
                         synchronized(lock) {
                             lastFrame?.release()
                             lastFrame = VideoFrame(copy, frame.rotation, frame.timestampNs)
