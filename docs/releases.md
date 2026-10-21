@@ -27,7 +27,7 @@ cd ..
 python3 scripts/package-android-release.py
 ```
 
-Release builds fail if signing values are missing; an unsigned or debug APK is never substituted. Output is `android/app/build/outputs/apk/release/app-release.apk`. The packager requires clean committed source, verifies the APK signature, rejects a debuggable/wrong-package APK, checks its version and embedded viewer bytes, and writes versioned assets under ignored `build/releases/`. It publishes only the public signing certificate, never the keystore. The `build-info.json` source revision must match the release tag.
+Release builds fail if signing values are missing; an unsigned or debug APK is never substituted. Output is `android/app/build/outputs/apk/release/app-release.apk`. The packager requires clean committed source, verifies the APK signature, rejects a debuggable/wrong-package APK or a signer differing from the public pin in `docs/releases/signing-certificate.sha256`, checks its version and embedded viewer bytes, and writes versioned assets under ignored `build/releases/`. It publishes only the public signing certificate, never the keystore. The `build-info.json` source revision must match the release tag.
 
 Use a stable owner-controlled PKCS#12 key. Keep an encrypted offline backup of the key, alias and passwords. The initial private signing backup was created outside the repository at `/workspace/lantern-release-signing/`; copy it into durable encrypted owner storage before this workspace is removed. Its public certificate fingerprint is attached to the GitHub release. The connected GitHub integration can publish release assets but cannot access repository Actions secrets (HTTP 403), so the backup has not been uploaded to repository secrets.
 

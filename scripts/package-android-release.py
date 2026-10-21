@@ -27,6 +27,10 @@ def main():
     candidates = [p for p in (sdk / "build-tools").iterdir() if (p / "apksigner").is_file() and re.fullmatch(r"\d+(?:\.\d+)+", p.name)]
     tools = max(candidates, key=lambda p: tuple(map(int, p.name.split("."))))
     cert = run(str(tools / "apksigner"), "verify", "--verbose", "--print-certs", str(args.apk))
+    signer = re.search(r"Signer #1 certificate SHA-256 digest: ([0-9a-f]{64})", cert)
+    expected_signer = (ROOT / "docs/releases/signing-certificate.sha256").read_text().strip()
+    if not signer or signer[1] != expected_signer:
+        parser.error("Release signer differs from the pinned update signing identity.")
     badging = run(str(tools / "aapt"), "dump", "badging", str(args.apk))
     package = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", badging)
     if not package or package[1] != "dev.lantern.peer" or "application-debuggable" in badging:
