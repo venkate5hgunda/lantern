@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Fo
 import { PeerApi } from "./api";
 import { CameraConnection } from "./connection";
 import { describeError, normalizeOrigin, type CameraEvent, type SavedPeer } from "./protocol";
+import { CameraExtras } from "./CameraExtras";
+import { loadFeatures } from "./features";
 import { loadPeers, savePeers } from "./storage";
 
 function CameraIcon() {
@@ -138,7 +140,7 @@ function EventHistory({ events, connection, loading }: {
             {events.map((event) => (
               <li key={event.id}>
                 <div>
-                  <strong>{event.trigger === "person" ? "Person detected" : "Manual snapshot"}</strong>
+                  <strong>{event.trigger === "person" ? "Person detected" : event.trigger === "scheduled" ? "Automatic snapshot" : "Manual snapshot"}</strong>
                   <time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time>
                   {event.confidence !== null && <span className="small muted">{Math.round(event.confidence * 100)}% model confidence</span>}
                 </div>
@@ -171,6 +173,7 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
   ));
   const state = useSyncExternalStore(connection.subscribe, connection.getSnapshot);
   const video = useRef<HTMLVideoElement | null>(null);
+  const [features] = useState(loadFeatures);
   const [sound, setSound] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -246,6 +249,8 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
           <p>{state.error}</p><button className="quiet" onClick={() => connection.clearError()}>Dismiss</button>
         </div>
       )}
+      {features.transportDetails && <p className="mic-notice">Live transport: standard WebRTC (DTLS-SRTP). Saved images: JPEG. {state.info?.capabilities.rollingSnapshots ? "Rolling snapshots supported." : "Manual snapshots only."}</p>}
+      <CameraExtras peer={peer} info={state.info} connection={connection} alerts={features.doorbellAlerts} onExpired={onExpired} />
       <EventHistory connection={connection} events={state.events} loading={state.loadingEvents} />
       <div className="camera-footer">
         <span className="small muted">{state.info?.capabilities.personDetection ? "On-device person detection" : "Local snapshot storage"}</span>

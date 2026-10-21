@@ -10,7 +10,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "media.navigator.streams.fake": true, "media.navigator.permission.disabled": true } } } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
     { name: "mobile-webkit", use: { ...devices["iPhone 13"] } },
     { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },

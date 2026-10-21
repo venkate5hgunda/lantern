@@ -117,8 +117,17 @@ export class ReferenceCamera {
       };
       window.lanternTestMicrophone = { requests: 0, tracks: [] };
       window.lanternAudioContexts = [];
+      const capture = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
       window.lanternCaptureStub = async () => {
         window.lanternTestMicrophone.requests++;
+        // Firefox's Web Audio oscillator needs an OS output device in this
+        // headless lab. Its built-in fake microphone still produces a real
+        // capture track and actual encoded audio, without that output device.
+        if (navigator.userAgent.includes("Firefox/")) {
+          const stream = await capture({ audio: true });
+          window.lanternTestMicrophone.tracks.push(...stream.getTracks());
+          return stream;
+        }
         const audio = new AudioContext();
         window.lanternAudioContexts.push(audio);
         const oscillator = audio.createOscillator();

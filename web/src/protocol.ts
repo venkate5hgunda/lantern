@@ -32,6 +32,8 @@ export const InfoSchema = z.object({
     audio: z.boolean(),
     snapshots: z.boolean(),
     personDetection: z.boolean(),
+    doorbell: z.boolean().optional(),
+    rollingSnapshots: z.boolean().optional(),
   }),
 });
 export type PeerInfo = z.infer<typeof InfoSchema>;
@@ -50,14 +52,14 @@ export const EventSchema = z.object({
   id: uuid,
   deviceId: uuid,
   createdAt: timestamp,
-  trigger: z.enum(["manual", "person"]),
+  trigger: z.enum(["manual", "person", "scheduled"]),
   confidence: z.number().finite().min(0).max(1).nullable(),
   snapshotPath: z.string(),
 }).superRefine((event, context) => {
   if (event.snapshotPath !== `/api/v1/events/${event.id}/snapshot`) {
     context.addIssue({ code: "custom", message: "Invalid snapshot path" });
   }
-  if ((event.trigger === "manual") !== (event.confidence === null)) {
+  if ((event.trigger !== "person") !== (event.confidence === null)) {
     context.addIssue({ code: "custom", message: "Invalid detection confidence" });
   }
 });
@@ -84,3 +86,16 @@ export const SavedPeersSchema = z.array(SavedPeerSchema).max(16).refine(
 export function describeError(error: unknown): string {
   return error instanceof Error ? error.message : "An unexpected operation failed.";
 }
+
+export const DoorbellSchema = z.object({
+  deviceId: uuid,
+  rings: z.array(z.object({ id: uuid, createdAt: timestamp, acknowledged: z.boolean() })).max(50),
+});
+export type Doorbell = z.infer<typeof DoorbellSchema>;
+export const StorageStatusSchema = z.object({
+  kind: z.literal("snapshots"), items: z.number().int().nonnegative(), bytes: z.number().int().nonnegative(),
+  maxItems: z.number().int().positive(), maxBytes: z.number().int().positive(),
+  maxAgeSeconds: z.number().int().positive(), reserveBytes: z.number().int().nonnegative(),
+  availableBytes: z.number().int().nonnegative(), automaticSnapshots: z.boolean(), error: z.string().nullable(),
+});
+export type StorageStatus = z.infer<typeof StorageStatusSchema>;

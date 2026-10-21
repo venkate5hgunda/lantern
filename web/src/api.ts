@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  ErrorSchema, EventSchema, EventsSchema, HeartbeatSchema, InfoSchema,
+  ErrorSchema, EventSchema, EventsSchema, HeartbeatSchema, InfoSchema, DoorbellSchema, StorageStatusSchema,
   PairSchema, SessionSchema, normalizeOrigin,
 } from "./protocol";
 
@@ -152,6 +152,12 @@ export class PeerApi {
   }
 
   events(signal?: AbortSignal) { return this.request("/api/v1/events", EventsSchema, {}, signal); }
+
+  doorbell(signal?: AbortSignal) { return this.request("/api/v1/doorbell", DoorbellSchema, {}, signal); }
+  acknowledgeRing(id: string, signal?: AbortSignal) {
+    return this.request(`/api/v1/doorbell/${z.string().uuid().parse(id)}/ack`, z.void(), { method: "POST" }, signal);
+  }
+  storage(signal?: AbortSignal) { return this.request("/api/v1/storage", StorageStatusSchema, {}, signal); }
 
   capture(signal?: AbortSignal) {
     return this.request("/api/v1/events", EventSchema, { method: "POST" }, signal);

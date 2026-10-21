@@ -26,12 +26,12 @@ android {
 
 val checkViewerAssets = tasks.register("checkViewerAssets") {
     doLast {
-        check(file("../../web/dist/index.html").isFile) {
+        check(file("../../web/dist/index.html").isFile && file("../../web/dist/review.html").isFile) {
             "Browser assets missing: build lantern/web first (npm run build)."
         }
     }
 }
-tasks.matching { it.name == "assembleDebug" }.configureEach { dependsOn(checkViewerAssets) }
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(checkViewerAssets) }
 tasks.withType<Test>().configureEach {
     val scratch = layout.buildDirectory.dir("test-runtime").get().asFile
     doFirst { scratch.mkdirs() }

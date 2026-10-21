@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit
 class PeerService : Service() {
     companion object { @Volatile var instance: PeerService? = null; private set }
     private lateinit var state: PeerState
+    private lateinit var doorbell: DoorbellStore
+    @Volatile private var storageError: String? = null
     private lateinit var events: EventStore
     private lateinit var camera: CameraRtc
     private var server: SecureServer? = null
@@ -49,6 +51,7 @@ class PeerService : Service() {
         state = PeerState(this)
         events = EventStore(this, state.id)
         camera = CameraRtc(this)
+        doorbell = DoorbellStore(this)
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(NotificationChannel("peer", "Lantern camera", NotificationManager.IMPORTANCE_LOW))
         val notice: Notification = NotificationCompat.Builder(this, "peer")
@@ -69,15 +72,18 @@ class PeerService : Service() {
             return
         }
         scheduler.scheduleWithFixedDelay({ slots.expire() }, 1, 1, TimeUnit.SECONDS)
+        scheduler.scheduleWithFixedDelay({
+            if (!work.isShutdown) try { work.execute { maintainEvidence() } }
+            catch (_: java.util.concurrent.RejectedExecutionException) { /* stopping */ }
+        }, 60, 60, TimeUnit.SECONDS)
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!foregroundReady) { stopSelf(); return START_NOT_STICKY }
         work.execute {
             if (changingIdentity) return@execute
             if (!Identity.available()) { currentHealth = "not configured: import a PKCS#12 identity"; return@execute }
-            try { events.pruneOrphans() } catch (_: Exception) {
-                currentHealth = "degraded: event storage unavailable"
-                return@execute
+            try { events.pruneOrphans(); events.maintain() } catch (_: Exception) {
+                storageError = "Event storage recovery failed. Check available storage."
             }
             if (server == null) {
                 try { server = SecureServer(this, state.origins, ::handle).also { it.start() } }
@@ -102,6 +108,33 @@ class PeerService : Service() {
             } else currentHealth = "disarmed: HTTPS ready"
         }
         return START_NOT_STICKY
+    }
+    private fun maintainEvidence() {
+        try {
+            events.maintain()
+            if (state.automaticSnapshots() && state.armed() && camera.ready() && !changingIdentity) {
+                when (snapshotGate.enter()) {
+                    SnapshotAdmission.READY -> try {
+                        val jpeg = camera.frameJpeg() ?: error("No current frame")
+                        if (state.automaticSnapshots() && state.armed() && camera.ready() && !changingIdentity) events.add(jpeg, "scheduled")
+                    } finally { snapshotGate.exit() }
+                    else -> return
+                }
+            }
+            storageError = null
+        } catch (_: Exception) { storageError = "Automatic capture or storage maintenance failed. Check free space and camera health." }
+    }
+    fun automaticSnapshots(): Boolean = state.automaticSnapshots()
+    fun automaticSnapshots(enabled: Boolean) { state.automaticSnapshots(enabled) }
+    fun ringDoorbell(callback: (String) -> Unit) {
+        work.execute {
+            val result = try {
+                if (!state.armed() || !camera.ready()) "Start the camera before ringing."
+                else if (doorbell.ring() == null) "Wait five seconds before ringing again."
+                else "Doorbell sent to open viewers. Closed browsers cannot receive alerts."
+            } catch (_: Exception) { "Doorbell could not be saved. Check storage." }
+            android.os.Handler(mainLooper).post { callback(result) }
+        }
     }
     override fun onBind(intent: Intent?): IBinder? = null
     fun preview(): org.webrtc.VideoTrack? = camera.preview()
@@ -173,9 +206,12 @@ class PeerService : Service() {
         stun?.stop()
         stun = null
         server?.stop()
-        camera.destroy()
         scheduler.shutdownNow()
         work.shutdownNow()
+        try { work.awaitTermination(5, TimeUnit.SECONDS) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+        camera.destroy()
+        events.close()
+        doorbell.close()
         currentHealth = "stopped"
         instance = null
         super.onDestroy()
@@ -195,6 +231,7 @@ class PeerService : Service() {
         if (req.method == "GET" && path == "/api/v1/info") {
             val capabilities = JSONObject().put("video", camera.ready()).put("audio", camera.ready())
                 .put("snapshots", camera.ready()).put("personDetection", false)
+                .put("doorbell", true).put("rollingSnapshots", true)
             val info = JSONObject().put("apiVersion", 1).put("deviceId", state.id)
                 .put("name", state.name()).put("armed", state.armed() && camera.ready())
                 .put("capabilities", capabilities)
@@ -228,6 +265,21 @@ class PeerService : Service() {
         }
         val owner = state.grants.authenticate(req.header("authorization"))
             ?: return Response.error(401, "unauthorized", "Missing or expired grant")
+        if (path == "/api/v1/storage" && req.method == "GET") {
+            val status = events.status().put("automaticSnapshots", state.automaticSnapshots())
+                .put("error", storageError ?: JSONObject.NULL)
+            return json(200, status)
+        }
+        if (path == "/api/v1/doorbell" && req.method == "GET") {
+            return json(200, JSONObject().put("deviceId", state.id)
+                .put("rings", JSONArray().also { array -> doorbell.list().forEach { array.put(doorbell.json(it)) } }))
+        }
+        val ringId = Regex("^/api/v1/doorbell/([0-9a-f-]{36})/ack$").matchEntire(path)?.groupValues?.get(1)
+        if (ringId != null && req.method == "POST") {
+            if (req.body.isNotEmpty()) return bad()
+            return if (doorbell.acknowledge(ringId)) Response(204)
+                else Response.error(404, "not_found", "Ring not found")
+        }
         if (path == "/api/v1/sessions" && req.method == "POST") {
             if (!state.armed() || !camera.ready()) return Response.error(503, "capture_unavailable", "Capture unavailable")
             val value = parse(req) ?: return bad()
@@ -294,6 +346,7 @@ class PeerService : Service() {
         }
         if (path == "/api/v1/events" && req.method == "GET") {
             val array = JSONArray()
+            events.maintain()
             events.list().forEach { array.put(events.json(it)) }
             return json(200, JSONObject().put("events", array))
         }

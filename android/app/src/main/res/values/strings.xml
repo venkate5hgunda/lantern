@@ -133,4 +133,7 @@
     <string name="guide_network_title">7. Qualify the network and hardware</string>
     <string name="guide_network">Test actual S23 Plus, Redmi, iOS, Windows and TV devices. Inspect selected WebRTC routes on LAN and Meshnet. Configure router/OS restrictions for HTTPS 8443, discovery UDP 8444 and negotiated media ports, including IPv6. Test unauthorized off-network reachability and 24-hour wired operation. The app does not enforce a firewall or prove isolation.</string>
     <string name="guide_full">Detailed desktop walkthrough: docs/setup-and-test.md in the project. The hardware acceptance checklist is docs/device-acceptance.md.</string>
+    <string name="ring_doorbell">Ring doorbell</string>
+    <string name="automatic_snapshots">Save a snapshot every minute while armed</string>
+    <string name="snapshot_retention_hint">Local still images only. Keeps at most 200 images, 7 days or 128 MiB, with 64 MiB free space reserved. Oldest images rotate automatically. This is not continuous video or a peer backup.</string>
 </resources>

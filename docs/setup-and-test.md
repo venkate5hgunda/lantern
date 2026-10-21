@@ -307,3 +307,12 @@ The actual native-video/browser gate and its emulator-only UDP mappings are
 documented in [the Android README](../android/README.md#actual-camera-to-browser-gate).
 Mocked protocols, synthetic audio and mobile/TV layout profiles do not replace
 physical trust, microphone/speaker, OEM lifecycle and network-isolation tests.
+
+
+## Rolling snapshots and doorbell
+
+On the phone, open Camera settings and enable **Save a snapshot every minute while armed**. No viewer is needed for capture. Retention is bounded by 200 images, 7 days and 128 MiB, with 64 MiB free space reserved; the earliest limit wins. Pause/stop suspends capture. Open **Local storage** in a paired viewer to inspect usage and refresh the status. This is a still-image ring, not continuous video or a peer backup.
+
+Press **Ring doorbell** on the armed phone. An open, visible paired viewer polls compatible cameras every five seconds. **Answer doorbell** starts an audio session; tap **Listen** and **Talk** explicitly. **Dismiss ring** acknowledges it across viewers; a failed connection leaves it unanswered. Old/missed rings remain in the bounded doorbell history. Closed/background browser delivery is not guaranteed.
+
+For product requirements, the approved Sites setup direction and the delivery ledger, open the unlisted **`/review.html`** path on the same static host. The current direct/local setup above remains necessary until the Sites client integration is released.

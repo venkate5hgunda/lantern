@@ -15,7 +15,7 @@ import java.io.File
 @Config(sdk = [29])
 class StorageTest {
     private fun context(): Context = RuntimeEnvironment.getApplication()
-    private fun store(context: Context = context()) = EventStore(context, "device-1", {})
+    private fun store(context: Context = context()) = EventStore(context, "device-1", syncDirectory = {})
     private fun jpeg(): ByteArray = ByteArrayOutputStream().use { output ->
         check(Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 90, output))
         output.toByteArray()

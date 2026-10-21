@@ -554,6 +554,11 @@ class MainActivity : ComponentActivity() {
                 else -> startPeer()
             }
         }
+        button(R.string.ring_doorbell, secondary = true) {
+            PeerService.instance?.ringDoorbell { result ->
+                if (!isFinishing && !isDestroyed) android.widget.Toast.makeText(this, result, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
         button(R.string.pair_another) { verifiedVideo = false; showStep(SetupStep.PAIR) }
         button(R.string.camera_settings, R.id.camera_settings, true) { showSettings() }
         text(R.string.prototype_notice)
@@ -600,6 +605,19 @@ class MainActivity : ComponentActivity() {
                 report(R.string.settings_saved)
             } catch (_: Exception) { report(R.string.save_failed) }
         }
+        val automatic = MaterialCheckBox(this).apply {
+            setText(R.string.automatic_snapshots)
+            isChecked = PeerService.instance?.automaticSnapshots() ?: state.automaticSnapshots()
+            minHeight = (48 * resources.displayMetrics.density).toInt()
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.automaticSnapshots(enabled) else state.automaticSnapshots(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        }
+        column.addView(automatic)
+        text(R.string.snapshot_retention_hint)
         text(R.string.viewers_title, true)
         grantsHost = LinearLayout(this).also {
             it.orientation = LinearLayout.VERTICAL
