@@ -22,11 +22,11 @@ Open `/review.html` next to the normal viewer `index.html`. This is an unlisted 
 
 ## Foreground doorbell milestone
 
-When implemented, press Ring on the local phone. Paired visible viewers poll compatible phones every five seconds and display recent unanswered rings. Answer starts a normal audio-capable WebRTC session; Listen and Talk remain deliberate controls. Acknowledgement dismisses the ring across viewers. Reloading or reopening the viewer shows only recent unacknowledged rings. A closed or background browser does not guarantee alerts; no push service is present.
+Press Ring on the local phone. Paired visible viewers poll compatible phones every five seconds and display recent unanswered rings. Answer starts a normal audio-capable WebRTC session; Listen and Talk remain deliberate controls. Acknowledgement dismisses the ring across viewers. Reloading or reopening the viewer shows only recent unacknowledged rings. A closed or background browser does not guarantee alerts; no push service is present.
 
 ## Rolling snapshot milestone
 
-When implemented, enable automatic snapshots in Android camera settings. Capture occurs once per minute while armed, without an open viewer. Pause or stop ends automatic capture. The initial policy retains at most 200 snapshots, 7 days and 128 MiB, while reserving 64 MiB free space. The earliest applicable limit wins; the setting is not a guaranteed seven-day history. At one image/minute, the 200-item cap holds roughly three hours twenty minutes. These are still images, not video clips or peer backups. Low disk space rejects captures and must be surfaced in storage diagnostics.
+Enable automatic snapshots in Android camera settings. Capture occurs once per minute while armed, without an open viewer. Pause or stop ends automatic capture. The initial policy retains at most 200 snapshots, 7 days and 128 MiB, while reserving 64 MiB free space. The earliest applicable limit wins; the setting is not a guaranteed seven-day history. At one image/minute, the 200-item cap holds roughly three hours twenty minutes. These are still images, not video clips or peer backups. Low disk space rejects captures and must be surfaced in storage diagnostics.
 
 ## Updates and recovery
 
@@ -37,3 +37,9 @@ After a process kill/reboot, reopen the app, inspect health and explicitly arm i
 ## Qualification before relying on a deployment
 
 Execute `docs/device-acceptance.md` on the intended physical devices and network. Browser reference peers and emulators prove particular software paths; they do not qualify phone acoustics, OEM power management, trust-store installation or private routing. Future video, backup and CV milestones add their own failure and soak gates before their switches become available.
+
+## Ambient camera screen
+
+The phone's **Ambient display with significant-motion wake** setting defaults on. Leave Lantern open on its armed camera page: after 30 seconds of quiet, it shows a black screen with a dim moving clock. Tap or produce significant movement in the scene to return to controls. It re-dims after another quiet period. System brightness/timeout returns when leaving the app or disabling the option. The clock changes position every 30 seconds to spread static pixel exposure; the live preview is detached while ambient.
+
+This is an in-app lock-screen style, not Android's secure lock screen. Pressing the hardware power/lock button still invokes the system lock; background motion does not bypass it. Person wake remains planned with the person detector. Test actual display brightness, orientation, long-running capture and motion sensitivity on your phones; software cannot guarantee prevention of OLED burn-in.

@@ -4,6 +4,9 @@ import AxeBuilder from "@axe-core/playwright";
 test("review embeds the source contract and keeps unsupported switches disabled", async ({ page }) => {
   await page.goto("/review.html");
   await expect(page.getByRole("heading", { name: "Lantern product requirements" })).toBeVisible();
+  await page.getByRole("link", { name: "Easy setup", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Few-click setup with GPT Sites" })).toBeVisible();
   await page.getByRole("link", { name: "Architecture", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Existing system and streaming decision" })).toBeVisible();
   await page.getByRole("link", { name: "Controls", exact: true }).click();

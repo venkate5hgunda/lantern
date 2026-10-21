@@ -1,5 +1,7 @@
 # Technical architecture
 
+Update: the owner approved GPT Sites registration and signaling as the recommended setup on 20 October 2026. See `managed-setup.md`; the direct/local system below remains the offline/advanced mode.
+
 ## Existing system and streaming decision
 
 Android Kotlin owns Camera2 capture, a shared WebRTC VideoTrack, Keystore HTTPS identity, scoped browser grants and SQLite event metadata. React/TypeScript is a static client. Each phone serves the same viewer assets; the bundle can also run on an independent HTTPS static host.
@@ -56,3 +58,9 @@ Owner device settings stay local until a separate role-based owner API exists. A
 ## Operational failures
 
 Capture stopped: keep HTTPS and history usable, report degraded state. Viewer lost: session lease expires and microphone stops. Peer offline: local recording continues, bounded queue reports lag. Disk full: prune within policy, reject admission with visible status, never delete outside evidence stores. Identity replacement: close sessions and listeners before restart. Process killed/reboot: preserve evidence and settings, require explicit camera arming according to Android foreground-service rules; do not promise unattended restart on OEM devices without a measured supported flow.
+
+## Ambient display and motion wake
+
+CameraRtc samples a 32×24 luminance grid from its existing one-frame-per-second I420 copy. The significant-motion policy removes mean exposure difference, thresholds changed-pixel fraction, requires two consecutive significant observations and resets its baseline on sampling gaps. It reports only a monotonic timestamp, retaining no extra image or biometric data. The capture thread does bounded work and never waits on UI or analytics.
+
+MainActivity applies a 30-second activity timeout while the camera page is foreground, armed and healthy. Ambient mode detaches the local renderer (WebRTC and capture remain independent), hides controls from accessibility traversal, shows a black frame with dim shifting text, hides system bars and sets window brightness to 1%. Scene activity or user interaction restores controls and system brightness. FLAG_KEEP_SCREEN_ON applies only to this foreground mode and is cleared on pause or opt-out. No wake lock, keyguard dismissal, background activity launch or global brightness change is used. Later person inference supplies the same monotonic activity signal after M4 qualification.

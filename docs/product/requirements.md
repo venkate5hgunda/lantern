@@ -4,7 +4,7 @@ Status: staged implementation. This document defines the target product; milesto
 
 ## Product promise
 
-Turn spare Android phones into an understandable, private home camera network. Each camera records locally, serves standard live WebRTC, accepts a doorbell conversation, and can retain encrypted copies for trusted peers. A static browser viewer coordinates the owner's experience without becoming an always-on server. Local capture must continue when viewers, the internet, or other cameras disappear.
+Turn spare Android phones into an understandable, private home camera network. Each camera records locally, serves standard live WebRTC, accepts a doorbell conversation, and can retain encrypted copies for trusted peers. A browser viewer coordinates the owner's experience without becoming an always-on server. Local capture must continue when viewers, the internet, or other cameras disappear.
 
 ## Users and primary journeys
 
@@ -62,4 +62,12 @@ Face recognition, replica transfer, automatic video and activity alerts stay dis
 
 ## Scope boundaries
 
-No public relay, hosted signaling or mandatory cloud account. Direct WebRTC works on reachable LAN/VPN paths; networks without a route require a deliberately configured TURN service or VPN. WebRTC is live transport, not a durable recording format. Browser-only reliable closed-tab notifications conflict with an entirely offline, serverless system; an optional notification bridge or native viewer is a later architectural choice.
+The recommended setup uses GPT Sites for registration and signaling, as approved on 20 October 2026; see `managed-setup.md`. Advanced direct/local mode has no hosted signaling or mandatory cloud account. Direct WebRTC works on reachable LAN/VPN paths; networks without a route require a deliberately configured TURN service or VPN. WebRTC is live transport, not a durable recording format. Browser-only reliable closed-tab notifications conflict with an entirely offline, serverless system; an optional notification bridge or native viewer is a later architectural choice.
+
+## Ambient camera display (owner addition, 20 October 2026)
+
+The armed foreground camera defaults to an in-app ambient screen after 30 seconds without interaction or significant scene motion. Use a black background, low per-window brightness, hidden system bars and a dim clock/hint that moves broadly every 30 seconds. Significant motion or a tap returns to the camera controls; returning to quiet re-enters ambient. Restore system brightness and normal screen-timeout behavior when the app pauses, the camera stops, or the setting is disabled. Android camera settings expose the owner control.
+
+Motion wake uses bounded low-resolution luminance sampling independently of viewers. Ignore small sensor noise and compensate for uniform exposure shifts; require two significant consecutive observations. This is a display wake cue, not person detection or an intrusion alert. Person-triggered wake joins the same display-activity policy when a real person detector ships in M4.
+
+The initial implementation keeps the foreground display on at low brightness; it does not switch the physical panel completely off or unlock Android's keyguard. The hardware power button/system lock remains authoritative. True locked-device wake needs a separate OS/OEM/device-owner qualification. Pixel movement and dimming reduce persistent exposure; neither software nor OLED black can guarantee prevention of burn-in. Qualify clock placement, brightness, display wake and capture continuity on both target phones and large fonts/orientation changes.

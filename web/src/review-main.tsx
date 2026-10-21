@@ -1,6 +1,7 @@
-import { StrictMode, useState, type ReactNode } from "react";
+import { StrictMode, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import requirements from "../../docs/product/requirements.md?raw";
+import managedSetup from "../../docs/product/managed-setup.md?raw";
 import architecture from "../../docs/product/architecture.md?raw";
 import milestones from "../../docs/product/milestones.md?raw";
 import operations from "../../docs/product/operations.md?raw";
@@ -8,7 +9,7 @@ import validation from "../../docs/validation.md?raw";
 import { defaultFeatures, loadFeatures, saveFeatures, type Features } from "./features";
 import "./styles.css";
 import "./review.css";
-const documents = { Requirements: requirements, Architecture: architecture, Milestones: milestones, Operations: operations, Validation: validation };
+const documents = { "Easy setup": managedSetup, Requirements: requirements, Architecture: architecture, Milestones: milestones, Operations: operations, Validation: validation };
 type DocumentName = keyof typeof documents;
 // Deliberately supports only repository Markdown. Raw HTML is always rendered as text.
 function Markdown({ source }: { source: string }) {
@@ -38,9 +39,19 @@ function Markdown({ source }: { source: string }) {
   }
   return <>{blocks}</>;
 }
+function readSection(): DocumentName | "Controls" {
+  let value: string;
+  try { value = decodeURIComponent(location.hash.slice(1)); } catch { return "Requirements"; }
+  return Object.hasOwn(documents, value) ? value as DocumentName : value === "Controls" ? "Controls" : "Requirements";
+}
 function Review() {
-  const initial = location.hash.slice(1);
+  const initial = readSection();
   const [selected, setSelected] = useState<DocumentName | "Controls">(Object.hasOwn(documents, initial) ? initial as DocumentName : initial === "Controls" ? "Controls" : "Requirements");
+  useEffect(() => {
+    const changed = () => setSelected(readSection());
+    window.addEventListener("hashchange", changed);
+    return () => window.removeEventListener("hashchange", changed);
+  }, []);
   const [features, setFeatures] = useState(loadFeatures);
   const [notice, setNotice] = useState<string | null>(null);
   function change(next: Features) { setFeatures(next); setNotice(saveFeatures(next) ?? "Saved for this tab. Open the viewer to apply."); }

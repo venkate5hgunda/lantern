@@ -12,11 +12,33 @@ Last updated: 20 October 2026. A checked box means implemented, not physical-dev
 
 ## M1 — Local evidence and foreground doorbell
 
-- [ ] Add byte/age/count/free-space bounds and populated-database migration to snapshot storage.
-- [ ] Owner opt-in to one-minute snapshots while armed; preserve manual capture.
-- [ ] Persist local doorbell rings, rate-limit presses, acknowledge from a paired viewer.
-- [ ] Viewer alerts and explicit answer; no automatic microphone activation.
-- [ ] Add automated regression checks and update setup/protocol/validation documentation.
+- [x] Add byte/age/count/free-space bounds and populated-database migration to snapshot storage.
+- [x] Owner opt-in to one-minute snapshots while armed; preserve manual capture.
+- [x] Persist local doorbell rings, rate-limit presses, acknowledge from a paired viewer.
+- [x] Viewer alerts and explicit answer; no automatic microphone activation.
+- [x] Add automated regression checks and update setup/protocol/validation documentation.
+
+## M1.1 — Ambient camera display and significant-motion wake
+
+- [x] Sample bounded luminance from existing capture without an open viewer.
+- [x] Filter sensor noise/uniform exposure changes and require sustained significant movement.
+- [x] Quiet-time ambient screen, dim moving clock, touch/motion wake, restore brightness on exit.
+- [x] Owner display toggle; no Android lock bypass or background activity launch.
+- [x] Pure policy tests for noise, movement, sampling gaps and inactivity.
+- [ ] Physical OLED, brightness, rotation, large-font and sustained camera/display qualification.
+- [ ] Person-triggered wake when M4 supplies real person detections.
+
+## M1.5 — Few-click Sites setup (now the recommended direction)
+
+Approved: use GPT Sites for setup and signaling; keep local/direct mode available. See `managed-setup.md` for the revised architecture and actual status.
+
+- [x] Specify install → permissions → short-lived device code → owned fleet journey.
+- [x] Implement and locally test D1 registry, hashed device credentials, one-time claims, owner scoping, revocation and bounded signaling jobs.
+- [ ] Integrate generated hosted migrations and qualify Sites browser/device identity boundaries.
+- [ ] Implement Android outbound enrollment/polling with Keystore secrets and idempotent command execution.
+- [ ] Implement the authenticated hosted viewer transport and restore fleet after sign-in.
+- [ ] Qualify direct/STUN/TURN connectivity, microphone cleanup and coordinator outages on real phones.
+- [ ] Enable managed mode only after a clean first-camera setup passes without certificates or address entry.
 
 ## M2 — Rolling video and timeline
 

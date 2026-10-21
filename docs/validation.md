@@ -1,4 +1,22 @@
-# Validation receipt
+# Current validation — 20 October 2026
+
+Managed Linux workspace, JDK 17 / Android SDK API 35 / Node 24. This receipt supersedes current-feature status in the historical receipt below; historical hardware results remain dated evidence, not re-executed checks.
+
+- 56 viewer unit tests pass and the standard `npm run build` succeeds, producing `index.html`, `review.html` and shared assets.
+- All 78 Playwright cases pass across Chromium, Firefox, WebKit, mobile WebKit, mobile Chromium and TV Chromium layouts. They include actual encoded WebRTC video/audio, microphone release, capability-gated doorbell acknowledgement, local storage reporting, review controls, keyboard layout and automated accessibility checks.
+- 46 Android JVM tests pass, including populated v1 storage migration, age/byte/count/free-space retention, recovery, persisted doorbell cooldown/acknowledgement, motion/noise/exposure filtering and ambient timeout behavior.
+- Android lint and debug app/instrumentation APK assembly succeed. Both viewer entrypoints are required before every Android pre-build.
+- Seven provisioning tests pass. Six coordinator tests pass using the actual initial SQL schema and Node SQLite through a D1 adapter (`node coordinator/worker.test.mjs`).
+
+The pinned Rollup tree-shaking pass stalled in this environment. The repository now explicitly disables that pass so the normal documented production build completes; type checking and bundling still run. No dependency versions were changed.
+
+Firefox originally failed on empty end-of-candidates markers; the viewer now ignores them. The remaining lab audio failure was a synthetic Web Audio oscillator waiting for an unavailable OS output device. The Firefox fixture now uses its standard fake microphone device instead, while assertions still verify real RTP packets and track shutdown. This does not qualify physical acoustics or permission prompts.
+
+No physical Android device, emulator instrumentation execution, real OLED display, keyguard wake, OEM process lifetime, LAN/VPN route, NAT/TURN service, person model or backup restore was qualified in this workspace. Ambient UI is compiled and its policies tested; physical dimming/motion/display behavior remains in the device checklist. New recognition and recording/backup capabilities remain disabled/planned.
+
+The Sites registry/signaling code is a locally tested backend foundation only. Native enrollment/polling, the authenticated viewer transport, hosted migrations and Sites phone-access authentication remain integration gates. The private review Site publishes the static viewer/documents, not the coordinator. Current camera setup still requires the direct/local identity flow.
+
+# Historical validation — 4 October 2026
 
 Executed on 4 October 2026 on an Apple Silicon macOS host. This is a
 development-prototype receipt, not certification of the intended household.
