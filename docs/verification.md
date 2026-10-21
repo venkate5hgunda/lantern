@@ -37,3 +37,9 @@ Executed checks and their limits are recorded in
 Android-camera-to-Chromium gate is documented in
 [the Android README](../android/README.md#actual-camera-to-browser-gate).
 The shared wire contract is [docs/protocol.md](protocol.md).
+
+## PWA, push and replica checks
+
+PWA tests serve the actual production bundle with a test-only static server. They inspect cached HTML, verify API exclusion and deny origin sockets before offline reload. Chromium/Firefox also use browser offline emulation. WebKit's native offline flag fails even for a minimal worker returning a literal response in this environment, so its gate uses real origin denial. Permission/subscription tests use browser API doubles; they do not call external push vendors. The other protocol/media suites block workers to keep fixture routing isolated.
+
+Native JVM tests include the RFC 8291 encrypted payload golden vector, VAPID signature validation, endpoint restrictions, durable per-viewer queue/revocation, presence policy and actual SQLite/filesystem backup reconciliation across interrupted commits and corruption. `PersonModelTest` builds into the instrumentation APK; executing it requires Android hardware/emulator and is not covered by JVM tests. Run coordinator checks separately with `node coordinator/worker.test.mjs`.

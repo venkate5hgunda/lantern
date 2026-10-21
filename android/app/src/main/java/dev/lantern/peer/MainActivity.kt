@@ -21,6 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.ScrollView
@@ -31,6 +32,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
@@ -49,7 +51,7 @@ import java.util.Date
 import androidx.appcompat.app.AlertDialog
 
 class MainActivity : ComponentActivity() {
-    private enum class Page { SETUP, CAMERA, SETTINGS }
+    private enum class Page { SETUP, CAMERA, SETTINGS, BACKUPS }
     private lateinit var state: PeerState
     private lateinit var importer: IdentityImportModel
     private val progress by lazy { getSharedPreferences("owner-setup", MODE_PRIVATE) }
@@ -78,6 +80,10 @@ class MainActivity : ComponentActivity() {
         set(value) { importer.grantsBeforeCode = value }
     private var message: Int? = null
     private lateinit var root: LinearLayout
+    private val ambientPolicy = AmbientDisplayPolicy()
+    private lateinit var ambientHost: FrameLayout
+    private lateinit var ambientClock: TextView
+    private var ambientShowing = false
     private lateinit var column: LinearLayout
     private var banner: TextView? = null
     private var healthTitle: TextView? = null
@@ -95,6 +101,7 @@ class MainActivity : ComponentActivity() {
     private val tick = object : Runnable {
         override fun run() {
             updateLive()
+            updateAmbientDisplay()
             handler.postDelayed(this, 1_000)
         }
     }
@@ -154,10 +161,31 @@ class MainActivity : ComponentActivity() {
             view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, keyboard.bottom))
             insets
         }
-        setContentView(root)
+        val display = FrameLayout(this)
+        display.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        ambientHost = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.BLACK)
+            visibility = View.GONE
+            isClickable = true
+            isFocusable = true
+            contentDescription = getString(R.string.ambient_wake)
+            setOnClickListener { ambientPolicy.interact(SystemClock.elapsedRealtime()); updateAmbientDisplay() }
+        }
+        ambientClock = TextView(this).apply {
+            textSize = 24f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(android.graphics.Color.rgb(95, 105, 98))
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        ambientHost.addView(ambientClock, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.CENTER))
+        display.addView(ambientHost, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        setContentView(display)
+        ambientPolicy.interact(SystemClock.elapsedRealtime())
         onBackPressedDispatcher.addCallback(this) {
             if (importer.status.value == ImportState.Working) return@addCallback
             when {
+                page == Page.BACKUPS -> showSettings()
                 page == Page.SETTINGS -> if (complete()) showCamera() else showStep(readiness().firstMissing())
                 page == Page.CAMERA || step == SetupStep.NAME -> finish()
                 else -> showStep(SetupStep.entries[step.ordinal - 1])
@@ -181,6 +209,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (::root.isInitialized) {
             readIdentity()
+            ambientPolicy.interact(SystemClock.elapsedRealtime())
             render()
             handler.removeCallbacks(tick)
             handler.post(tick)
@@ -188,8 +217,58 @@ class MainActivity : ComponentActivity() {
     }
     override fun onPause() {
         handler.removeCallbacks(tick)
+        restoreDisplay()
         detachPreview()
         super.onPause()
+    }
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        ambientPolicy.interact(SystemClock.elapsedRealtime())
+        if (::ambientHost.isInitialized && ambientShowing) updateAmbientDisplay()
+    }
+    private fun restoreDisplay() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.attributes = window.attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE }
+        WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+        if (::ambientHost.isInitialized) ambientHost.visibility = View.GONE
+        if (::root.isInitialized) { root.visibility = View.VISIBLE; root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO }
+        ambientShowing = false
+    }
+    private fun updateAmbientDisplay() {
+        val service = PeerService.instance
+        if (page != Page.CAMERA || service?.health != "running" || !service.ambientDisplay()) {
+            if (ambientShowing) restoreDisplay()
+            else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            return
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val now = SystemClock.elapsedRealtime()
+        val ambient = ambientPolicy.ambient(now, service.lastSceneActivity())
+        if (ambient) {
+            if (!ambientShowing) {
+                detachPreview()
+                root.visibility = View.INVISIBLE
+                root.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                ambientHost.visibility = View.VISIBLE
+                window.attributes = window.attributes.apply { screenBrightness = 0.01f }
+                WindowInsetsControllerCompat(window, window.decorView).apply {
+                    systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    hide(WindowInsetsCompat.Type.systemBars())
+                }
+                ambientShowing = true
+            }
+            ambientClock.text = getString(R.string.ambient_clock, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date()))
+            // Broad bounded drift, different X/Y cycles, no fixed bright logo.
+            val phase = now / 30_000
+            val x = minOf(dp(64), ((ambientHost.width - ambientClock.width) / 2 - dp(24)).coerceAtLeast(0))
+            val y = minOf(dp(96), ((ambientHost.height - ambientClock.height) / 2 - dp(24)).coerceAtLeast(0))
+            ambientClock.translationX = ((phase * 7 % 13) / 6f - 1f) * x
+            ambientClock.translationY = ((phase * 5 % 17) / 8f - 1f) * y
+        } else if (ambientShowing) {
+            restoreDisplay()
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            updateLive()
+        }
     }
     override fun onDestroy() {
         detachPreview()
@@ -245,6 +324,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun render() {
+        if (ambientShowing) restoreDisplay()
         if (importer.status.value == ImportState.Working) {
             page = Page.SETUP
             step = SetupStep.IDENTITY
@@ -287,6 +367,7 @@ class MainActivity : ComponentActivity() {
             Page.SETUP -> renderSetup()
             Page.CAMERA -> renderCamera()
             Page.SETTINGS -> renderSettings()
+            Page.BACKUPS -> renderBackups()
         }
         if (importer.status.value == ImportState.Working) disableForm(column)
         column.requestFocus()
@@ -554,6 +635,11 @@ class MainActivity : ComponentActivity() {
                 else -> startPeer()
             }
         }
+        button(R.string.ring_doorbell, secondary = true) {
+            PeerService.instance?.ringDoorbell { result ->
+                if (!isFinishing && !isDestroyed) android.widget.Toast.makeText(this, result, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
         button(R.string.pair_another) { verifiedVideo = false; showStep(SetupStep.PAIR) }
         button(R.string.camera_settings, R.id.camera_settings, true) { showSettings() }
         text(R.string.prototype_notice)
@@ -600,6 +686,44 @@ class MainActivity : ComponentActivity() {
                 report(R.string.settings_saved)
             } catch (_: Exception) { report(R.string.save_failed) }
         }
+        column.addView(MaterialCheckBox(this).apply {
+            setText(R.string.person_detection)
+            isChecked = PeerService.instance?.personDetection() ?: state.personDetection()
+            minHeight = dp(48)
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.personDetection(enabled) else state.personDetection(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        })
+        text(R.string.person_detection_hint)
+        column.addView(MaterialCheckBox(this).apply {
+            setText(R.string.ambient_display)
+            isChecked = PeerService.instance?.ambientDisplay() ?: state.ambientDisplay()
+            minHeight = dp(48)
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.ambientDisplay(enabled) else state.ambientDisplay(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        })
+        text(R.string.ambient_display_hint)
+        val automatic = MaterialCheckBox(this).apply {
+            setText(R.string.automatic_snapshots)
+            isChecked = PeerService.instance?.automaticSnapshots() ?: state.automaticSnapshots()
+            minHeight = (48 * resources.displayMetrics.density).toInt()
+            setOnCheckedChangeListener { _, enabled ->
+                try {
+                    val service = PeerService.instance
+                    if (service != null) service.automaticSnapshots(enabled) else state.automaticSnapshots(enabled)
+                } catch (_: Exception) { report(R.string.save_failed) }
+            }
+        }
+        column.addView(automatic)
+        text(R.string.snapshot_retention_hint)
+        button(R.string.backup_manage, secondary = true) { page = Page.BACKUPS; render() }
         text(R.string.viewers_title, true)
         grantsHost = LinearLayout(this).also {
             it.orientation = LinearLayout.VERTICAL
@@ -620,6 +744,57 @@ class MainActivity : ComponentActivity() {
                 })
         }
         button(R.string.back_camera, R.id.setup_back, true) { if (complete()) showCamera() else showStep(readiness().firstMissing()) }
+    }
+    private fun renderBackups() {
+        text(R.string.backup_title, true).id = R.id.setup_title
+        button(R.string.camera_settings, secondary = true) { showSettings() }
+        text(R.string.backup_intro)
+        val service = PeerService.instance
+        if (service == null || !Identity.available()) { text(R.string.backup_start_first); return }
+        text(getString(R.string.backup_fingerprint, Identity.fingerprint())).apply { typeface = Typeface.MONOSPACE }
+        button(R.string.backup_copy_pin, secondary = true) {
+            getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Camera certificate SHA-256", Identity.fingerprint()))
+        }
+        button(R.string.backup_generate, secondary = true) {
+            val code = service.newBackupCode()
+            secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_code_title)
+                .setMessage(getString(R.string.backup_code_message, code, Identity.fingerprint()))
+                .setPositiveButton(R.string.done, null))
+        }
+        val (originLayout, origin) = field(R.string.backup_peer_address, R.string.backup_peer_hint, View.generateViewId(), "")
+        val (pinLayout, pin) = field(R.string.backup_peer_pin, R.string.backup_pin_hint, View.generateViewId(), "")
+        val (codeLayout, code) = field(R.string.backup_peer_code, R.string.backup_code_hint, View.generateViewId(), "")
+        code.inputType = InputType.TYPE_CLASS_NUMBER
+        val ownAddress = progress.getString("address", "")?.takeIf { it in ownOrigins } ?: ownOrigins.firstOrNull().orEmpty()
+        val (ownLayout, own) = field(R.string.backup_own_address, R.string.backup_own_hint, View.generateViewId(), ownAddress)
+        var pairing = false
+        button(R.string.backup_pair, secondary = true) {
+            if (pairing) return@button
+            val peerOrigin = origin.text.toString().trim().removeSuffix("/")
+            val fingerprint = pin.text.toString().trim().lowercase(java.util.Locale.ROOT).replace(":", "").replace(" ", "")
+            val ownOrigin = own.text.toString().trim().removeSuffix("/")
+            val pairingCode = code.text.toString().trim()
+            originLayout.error = if (Origins.canonical(peerOrigin) == peerOrigin) null else getString(R.string.backup_address_error)
+            pinLayout.error = if (fingerprint.matches(Regex("[0-9a-f]{64}"))) null else getString(R.string.backup_pin_hint)
+            codeLayout.error = if (pairingCode.matches(Regex("[0-9]{6}"))) null else getString(R.string.backup_code_hint)
+            ownLayout.error = if (ownOrigin in ownOrigins) null else getString(R.string.backup_own_hint)
+            if (listOf(originLayout, pinLayout, codeLayout, ownLayout).any { it.error != null }) return@button
+            pairing = true; hideKeyboard(); code.setText("")
+            service.pairBackup(peerOrigin, fingerprint, pairingCode, ownOrigin) { result ->
+                pairing = false
+                if (!isFinishing && !isDestroyed) secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_title).setMessage(result).setPositiveButton(R.string.done, null))
+            }
+        }
+        button(R.string.backup_status, secondary = true) {
+            secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_status).setMessage(service.backupStatus()).setPositiveButton(R.string.done, null))
+        }
+        for ((id, address) in service.backupTargets()) {
+            text(address)
+            button(R.string.backup_unlink, secondary = true) {
+                secureDialog(MaterialAlertDialogBuilder(this).setTitle(R.string.backup_unlink).setMessage(R.string.backup_unlink_hint)
+                    .setNegativeButton(R.string.cancel, null).setPositiveButton(R.string.backup_unlink) { _, _ -> service.unlinkBackup(id); render() })
+            }
+        }
     }
     private fun startPeer() {
         if (!identity || ownOrigins.isEmpty()) { showStep(SetupStep.IDENTITY); return }
@@ -685,7 +860,7 @@ class MainActivity : ComponentActivity() {
             startingUntil = 0
             report(R.string.start_timeout)
         }
-        if (raw == "running" && !pausing && previewHost != null && renderer == null) attachPreview(service!!)
+        if (raw == "running" && !pausing && !ambientShowing && previewHost != null && renderer == null) attachPreview(service!!)
         if (raw != "running" && renderer != null) detachPreview()
         val grants = activeGrants()
         if (pairingCode != null && (service == null ||

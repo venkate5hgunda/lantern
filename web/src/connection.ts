@@ -35,7 +35,7 @@ function browserPeer(iceServers: RTCIceServer[]): PeerConnectionPort {
       pc.addEventListener("iceconnectionstatechange", listener);
     },
     onCandidate: (listener) => {
-      pc.onicecandidate = (event) => { if (event.candidate) listener(event.candidate.toJSON()); };
+      pc.onicecandidate = (event) => { if (event.candidate?.candidate) listener(event.candidate.toJSON()); };
     },
     close: () => pc.close(),
   };

@@ -307,3 +307,22 @@ The actual native-video/browser gate and its emulator-only UDP mappings are
 documented in [the Android README](../android/README.md#actual-camera-to-browser-gate).
 Mocked protocols, synthetic audio and mobile/TV layout profiles do not replace
 physical trust, microphone/speaker, OEM lifecycle and network-isolation tests.
+
+
+## Rolling snapshots and doorbell
+
+On the phone, open Camera settings and enable **Save a snapshot every minute while armed**. No viewer is needed for capture. Retention is bounded by 200 images, 7 days and 128 MiB, with 64 MiB free space reserved; the earliest limit wins. Pause/stop suspends capture. Open **Local storage** in a paired viewer to inspect usage and refresh the status. This is a still-image ring, not continuous video or a peer backup.
+
+Press **Ring doorbell** on the armed phone. An open, visible paired viewer polls compatible cameras every five seconds. **Answer doorbell** starts an audio session; tap **Listen** and **Talk** explicitly. **Dismiss ring** acknowledges it across viewers; a failed connection leaves it unanswered. Old/missed rings remain in the bounded doorbell history. Closed/background browser delivery is not guaranteed.
+
+For product requirements, the approved Sites setup direction and the delivery ledger, open the unlisted **`/review.html`** path on the same static host. The current direct/local setup above remains necessary until the Sites client integration is released.
+
+## Ambient display
+
+Leave Lantern on the armed camera page. **Ambient display with significant-motion wake** defaults on in Camera settings. After 30 seconds without input/significant motion, the local preview yields to a black screen with a dim clock that shifts position every 30 seconds. Movement or a tap restores the controls; capture and live sessions continue independently. System brightness and screen-timeout behavior return when leaving the app or disabling the setting. Hardware lock remains Android-controlled. Enable on-device person detection in Camera settings for confirmed-person wake and event snapshots; motion wake itself does not classify people.
+
+## PWA, person alerts and redundant backups
+
+The viewer is an installable PWA. Follow [PWA and notifications](product/notifications-pwa.md) to install, remember cameras on a trusted device and enable alerts for each viewer. Enable person detection in Android camera settings, then verify a confirmed-person snapshot and presence status. Physical model accuracy and push delivery need qualification on your devices.
+
+Follow [peer backup pairing](product/peer-backups.md) on two armed phones. Verify both directions, pending/verified counts and a recovered snapshot with the source disconnected. Replication covers bounded JPEG snapshot history; it does not record continuous video or synchronize system settings.

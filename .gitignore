@@ -17,3 +17,4 @@ provisioning/
 *.keystore
 *-key.pem
 .DS_Store
+build/

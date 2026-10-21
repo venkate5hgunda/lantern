@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Fo
 import { PeerApi } from "./api";
 import { CameraConnection } from "./connection";
 import { describeError, normalizeOrigin, type CameraEvent, type SavedPeer } from "./protocol";
-import { loadPeers, savePeers } from "./storage";
+import { PwaStatus } from "./PwaStatus";
+import { enableNotifications, disableNotifications } from "./notifications";
+import { CameraExtras } from "./CameraExtras";
+import { loadFeatures } from "./features";
+import { loadPeers, savePeers, remembersViewer, setRememberViewer } from "./storage";
 
 function CameraIcon() {
   return (
@@ -76,7 +80,7 @@ function PairForm({ initialOrigin, onPaired, onCancel }: {
         </div>
         {error && <p role="alert" className="error">{error}</p>}
         <div className="form-footer">
-          <p className="small muted">Credentials stay in this browser tab's session. Configure LAN/Meshnet-only network access separately.</p>
+          <p className="small muted">Credentials stay in this tab unless you choose Remember this viewer. Configure LAN/Meshnet access separately.</p>
           <button type="submit" className="primary" disabled={busy}>{busy ? "Pairing..." : "Pair camera"}</button>
         </div>
       </form>
@@ -138,7 +142,7 @@ function EventHistory({ events, connection, loading }: {
             {events.map((event) => (
               <li key={event.id}>
                 <div>
-                  <strong>{event.trigger === "person" ? "Person detected" : "Manual snapshot"}</strong>
+                  <strong>{event.trigger === "person" ? "Person detected" : event.trigger === "scheduled" ? "Automatic snapshot" : "Manual snapshot"}</strong>
                   <time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time>
                   {event.confidence !== null && <span className="small muted">{Math.round(event.confidence * 100)}% model confidence</span>}
                 </div>
@@ -171,9 +175,11 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
   ));
   const state = useSyncExternalStore(connection.subscribe, connection.getSnapshot);
   const video = useRef<HTMLVideoElement | null>(null);
+  const [features] = useState(loadFeatures);
   const [sound, setSound] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
   useEffect(() => {
     void connection.refresh();
     return () => { void connection.stop(); };
@@ -191,12 +197,16 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
     if (!state.audio) setSound(false);
   }, [state.audio]);
 
+  function startViewing(audio: boolean) {
+    if (state.info?.capabilities.pushNotifications) void enableNotifications(peer, new PeerApi(peer.origin, peer.token), true);
+    void connection.connect(audio);
+  }
   const connecting = state.connection === "connecting";
   const connected = state.connection === "connected";
   const name = state.info?.name ?? peer.name;
 
   return (
-    <article className="camera-card" aria-label={`${name} camera`}>
+    <article id={`camera-${peer.deviceId}`} className="camera-card" aria-label={`${name} camera`}>
       <div className="camera-heading">
         <div><h2>{name}</h2><p className="endpoint">{peer.origin}</p></div>
         <span className={`badge ${connected ? "live" : ""}`}>
@@ -219,10 +229,10 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
         )}
       </div>
       <div className="camera-controls">
-        {!connected && !connecting && <button className="primary" onClick={() => { void connection.connect(false); }}>Watch</button>}
+        {!connected && !connecting && <button className="primary" onClick={() => { startViewing(false); }}>Watch</button>}
         {(connected || connecting) && <button onClick={() => { void connection.disconnect(); }}>Disconnect</button>}
         <button disabled={connecting || state.info?.capabilities.audio === false}
-          onClick={() => { void connection.connect(true); }}>
+          onClick={() => { startViewing(true); }}>
           {state.audio ? "Restart audio session" : "Connect with audio"}
         </button>
         <button disabled={!connected || !state.audio} aria-pressed={sound}
@@ -246,6 +256,8 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
           <p>{state.error}</p><button className="quiet" onClick={() => connection.clearError()}>Dismiss</button>
         </div>
       )}
+      {features.transportDetails && <p className="mic-notice">Live transport: standard WebRTC (DTLS-SRTP). Saved images: JPEG. {state.info?.capabilities.rollingSnapshots ? "Rolling snapshots supported." : "Manual snapshots only."}</p>}
+      <CameraExtras peer={peer} info={state.info} connection={connection} alerts={features.doorbellAlerts} onExpired={onExpired} />
       <EventHistory connection={connection} events={state.events} loading={state.loadingEvents} />
       <div className="camera-footer">
         <span className="small muted">{state.info?.capabilities.personDetection ? "On-device person detection" : "Local snapshot storage"}</span>
@@ -253,7 +265,10 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
           ? <button className="quiet" onClick={() => setConfirmRemove(true)}>Remove camera</button>
           : <div className="remove-confirm">
             <span className="small">Forget this viewer's credentials?</span>
-            <button className="danger" onClick={() => { void connection.stop().then(onRemove); }}>Remove</button>
+            <button className="danger" disabled={removing} onClick={() => {
+              setRemoving(true);
+              void Promise.all([connection.stop(), state.info?.capabilities.pushNotifications ? disableNotifications(peer, new PeerApi(peer.origin, peer.token)) : Promise.resolve()]).then(onRemove);
+            }}>{removing ? "Removing…" : "Remove"}</button>
             <button className="quiet" onClick={() => setConfirmRemove(false)}>Keep</button>
           </div>}
       </div>
@@ -267,6 +282,7 @@ export default function App() {
   const [warning, setWarning] = useState(initial.warning);
   const [pairOrigin, setPairOrigin] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
+  const [remember, setRemember] = useState(remembersViewer);
   const warn = useCallback((message: string) => setWarning(message), []);
   const persist = useCallback((update: (previous: SavedPeer[]) => SavedPeer[]) => {
     setPeers((previous) => {
@@ -299,6 +315,10 @@ export default function App() {
         <button className="primary" onClick={() => setPairOrigin("")}>Add camera</button>
       </header>
       <main>
+        <PwaStatus remember={remember} onRemember={(value) => {
+          const problem = setRememberViewer(value, peers);
+          if (problem) setWarning(problem); else setRemember(value);
+        }} />
         <section className="intro">
           <div><p className="eyebrow">YOUR CAMERAS. YOUR NETWORK.</p><h1>A window into home.</h1>
             <p className="muted">Independent cameras, direct viewing. LAN/Meshnet-only access requires network configuration and route verification.</p></div>
@@ -343,14 +363,14 @@ export default function App() {
               <p><strong>Trust HTTPS on every viewer.</strong> Import the household CA and enable TLS trust. Meshnet does not issue browser certificates.</p>
               <p><strong>Approve this origin on each camera:</strong> <code>{location.origin}</code>. GitHub Pages and other camera-hosted viewers are separate origins.</p>
               <p><strong>For remote viewing:</strong> enable Meshnet on both devices and grant the viewer remote-access permission. Keep camera-level pairing enabled.</p>
-              <p><strong>Doorbell audio:</strong> start an audio session, tap Listen, then Talk. Only one audio session per camera is allowed. Closed browser tabs do not receive reliable doorbell alerts.</p>
-              <p><strong>Initial milestone:</strong> local snapshots and direct live sessions. Peer replication, cloud backup and owner recognition are not implemented yet.</p>
+              <p><strong>Doorbell audio:</strong> start an audio session, tap Listen, then Talk. Only one audio session per camera is allowed. Enable event notifications for background push alerts; delivery depends on browser, OS and internet access.</p>
+              <p><strong>Initial milestone:</strong> local snapshots and direct live sessions. Encrypted snapshot replication and on-device person detection are available in the camera settings. Continuous video, cloud backup and owner recognition remain planned.</p>
               <p><strong>Remove versus revoke:</strong> removing a camera forgets this tab's credentials. Revoke the viewer grant on the phone to invalidate it.</p>
             </div>
           )}
         </section>
       </main>
-      <footer className="page-footer"><span>Lantern / personal camera network</span><span>Media travels directly to your viewer. No analytics.</span></footer>
+      <footer className="page-footer"><span>Lantern / personal camera network</span><span>Direct media. Optional analytics stay on camera.</span></footer>
     </div>
   );
 }

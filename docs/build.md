@@ -28,5 +28,6 @@ The browser build must precede Android assembly: Gradle embeds `web/dist/` in
 the APK. APK output:
 `android/app/build/outputs/apk/debug/app-debug.apk`.
 Windows native builds use the checked-in `gradlew.bat`.
+For signed APKs, checksums and GitHub publication, follow [Android releases](releases.md). Debug builds are for local development and do not share the release signing identity.
 For native setup and Samsung/MIUI lifecycle settings, see
 [android/README.md](../android/README.md).
