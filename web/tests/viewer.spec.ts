@@ -155,10 +155,10 @@ test("switches the active camera without mounting every camera console", async (
     cameras.map(({ armed: _armed, ...camera }) => ({ ...camera, expiresAt: "2099-01-01T00:00:00Z" })));
   await page.reload();
 
-  await expect(page.getByRole("tab", { name: "Front door, Armed" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("button", { name: "Front door, Armed" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("article", { name: "Front door camera" })).toBeVisible();
-  await page.getByRole("tab", { name: "Garage, Disarmed" }).click();
-  await expect(page.getByRole("tab", { name: "Garage, Disarmed" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Garage, Disarmed" }).click();
+  await expect(page.getByRole("button", { name: "Garage, Disarmed" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("article", { name: "Garage camera" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Front door camera" })).toHaveCount(0);
 });

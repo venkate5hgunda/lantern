@@ -47,14 +47,14 @@ describe("multi-camera viewer", () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const frontDoor = await screen.findByRole("tab", { name: "Front door, Armed" });
-    expect(frontDoor.getAttribute("aria-selected")).toBe("true");
+    const frontDoor = await screen.findByRole("button", { name: "Front door, Armed" });
+    expect(frontDoor.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("article", { name: "Front door camera" })).not.toBeNull();
     expect(screen.queryByRole("article", { name: "Garage camera" })).toBeNull();
 
-    await user.click(await screen.findByRole("tab", { name: "Garage, Disarmed" }));
+    await user.click(await screen.findByRole("button", { name: "Garage, Disarmed" }));
 
-    expect(screen.getByRole("tab", { name: "Garage, Disarmed" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("button", { name: "Garage, Disarmed" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("article", { name: "Garage camera" })).not.toBeNull();
     expect(screen.queryByRole("article", { name: "Front door camera" })).toBeNull();
   });

@@ -162,7 +162,7 @@ function CameraTile({ peer, selected, onSelect }: { peer: SavedPeer; selected: b
   }, [peer.origin, peer.token]);
   const statusLabel = status === "pair-again" ? "Pair again" : status === "checking" ? "Checking" : status === "armed" ? "Armed" : status === "disarmed" ? "Disarmed" : "Offline";
   return (
-    <button className={`camera-tile ${selected ? "selected" : ""}`} role="tab" aria-selected={selected}
+    <button className={`camera-tile ${selected ? "selected" : ""}`} aria-pressed={selected}
       aria-label={`${peer.name}, ${statusLabel}`} onClick={onSelect}>
       <span className="camera-tile-visual"><UiIcon src={videoIcon} /></span>
       <span className="camera-tile-copy"><strong>{peer.name}</strong><span className={`camera-state ${status}`}><i aria-hidden="true" />{statusLabel}</span></span>
@@ -289,7 +289,7 @@ export default function App() {
           {warning && <div className="error-banner" role="alert"><p>{warning}</p><button className="quiet" onClick={() => setWarning(null)}>Dismiss</button></div>}
           {pairOrigin !== null && <PairForm key={pairOrigin} initialOrigin={pairOrigin} onPaired={paired} onCancel={() => setPairOrigin(null)} />}
           {peers.length === 0 && pairOrigin === null && <section className="welcome" aria-labelledby="welcome-title"><div className="welcome-visual"><UiIcon src={lampIcon} /></div><p className="eyebrow">NO SHARED SERVER. PAIRED VIEWERS.</p><h2 id="welcome-title">Start with one trusted camera.</h2><p className="muted">Install Lantern on an Android phone, provision its HTTPS identity, and pair this browser using the code on its screen.</p><button className="primary" onClick={() => setPairOrigin("")}><UiIcon src={plusIcon} />Pair your first camera</button></section>}
-          {peers.length > 0 && <><div className="camera-strip" role="tablist" aria-label="Paired cameras">{peers.map((peer) => <CameraTile key={peer.origin} peer={peer} selected={peer.origin === selectedOrigin} onSelect={() => setSelectedOrigin(peer.origin)} />)}</div>
+          {peers.length > 0 && <><div className="camera-strip" role="group" aria-label="Paired cameras">{peers.map((peer) => <CameraTile key={peer.origin} peer={peer} selected={peer.origin === selectedOrigin} onSelect={() => setSelectedOrigin(peer.origin)} />)}</div>
             {selected?.token ? <CameraCard key={`${selected.origin}:${selected.token}`} peer={selected} onWarning={warn}
               onRemove={() => persist((previous) => previous.filter((item) => item.origin !== selected.origin))}
               onExpired={() => { persist((previous) => previous.map((item) => item.origin === selected.origin ? { ...item, token: null, expiresAt: null } : item)); setWarning(`${selected.name}: credentials expired or were revoked. Pair this browser again.`); }} />
