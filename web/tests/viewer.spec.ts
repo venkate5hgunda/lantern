@@ -63,7 +63,7 @@ test("loads privately with accessible onboarding and no third-party requests", a
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("A window into home.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cameras");
   await expect(page.getByRole("button", { name: "Pair your first camera" })).toBeVisible();
   await page.getByRole("button", { name: "Connection and privacy checklist" }).click();
   await expect(page.getByText("Peer replication, cloud backup and owner recognition", { exact: false })).toBeVisible();
@@ -132,4 +132,33 @@ test("removing a camera forgets tab credentials without pretending to revoke the
   await card.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByRole("article")).toHaveCount(0);
   expect(await page.evaluate(() => sessionStorage.getItem("lantern.peers.v1"))).toBe("[]");
+});
+
+test("switches the active camera without mounting every camera console", async ({ page }) => {
+  const cameras = [
+    { origin: "https://front-door.nord:8443", deviceId: "11111111-1111-4111-8111-111111111111", name: "Front door", armed: true, token: "b".repeat(43) },
+    { origin: "https://garage.nord:8443", deviceId: "22222222-2222-4222-8222-222222222222", name: "Garage", armed: false, token: "c".repeat(43) },
+  ];
+  for (const camera of cameras) {
+    await page.route(`${camera.origin}/**`, async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const body = path === "/api/v1/info"
+        ? { apiVersion: 1, deviceId: camera.deviceId, name: camera.name, armed: camera.armed,
+          capabilities: { video: true, audio: true, snapshots: true, personDetection: false } }
+        : { events: [] };
+      await route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "http://127.0.0.1:4173" },
+        contentType: "application/json", body: JSON.stringify(body) });
+    });
+  }
+  await page.goto("/");
+  await page.evaluate((saved) => sessionStorage.setItem("lantern.peers.v1", JSON.stringify(saved)),
+    cameras.map(({ armed: _armed, ...camera }) => ({ ...camera, expiresAt: "2099-01-01T00:00:00Z" })));
+  await page.reload();
+
+  await expect(page.getByRole("tab", { name: "Front door, Armed" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("article", { name: "Front door camera" })).toBeVisible();
+  await page.getByRole("tab", { name: "Garage, Disarmed" }).click();
+  await expect(page.getByRole("tab", { name: "Garage, Disarmed" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("article", { name: "Garage camera" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Front door camera" })).toHaveCount(0);
 });

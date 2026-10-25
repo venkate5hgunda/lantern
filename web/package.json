@@ -4,7 +4,9 @@
   "private": true,
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
@@ -13,6 +15,7 @@
     "check": "npm run test && npm run test:browser"
   },
   "dependencies": {
+    "@tabler/icons": "^3.49.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "zod": "3.25.76"
