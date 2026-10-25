@@ -109,7 +109,7 @@ test("clears revoked credentials and requires re-pairing", async ({ page }) => {
   await mockCamera(page, { revoked: true });
   await page.goto("/");
   await pair(page);
-  await expect(page.getByRole("button", { name: "Pair again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pair again", exact: true })).toBeVisible();
   const saved = await page.evaluate(() => JSON.parse(sessionStorage.getItem("lantern.peers.v1") ?? "[]"));
   expect(saved[0].token).toBeNull();
   await expect(page.getByRole("alert")).toContainText("revoked");

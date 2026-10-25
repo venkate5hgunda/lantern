@@ -31,6 +31,8 @@ termination, thermal throttling or battery safety.
   retention and authenticated browser history/downloads.
 - Responsive, keyboard-accessible viewer assets served by every phone. The
   same static bundle can be hosted elsewhere without becoming a camera hub.
+- Multi-camera overview with explicit camera selection. Only the selected
+  console can stream; switching closes its previous session and microphone.
 
 Person detection, motion/person-triggered recording, video clips, a doorbell
 press/notification workflow, encrypted peer replication, cloud uploads and

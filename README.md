@@ -20,6 +20,7 @@
 - 📷 **Each phone is its own camera** — owns its HTTPS identity, authorizations and snapshots.
 - 🔐 **Pair with a code** — single-use six-digit codes, expiring revocable grants.
 - 🎥 **Direct viewing** — on-demand WebRTC video, explicit listen/talk audio, JPEG snapshots.
+- 🪴 **Calm multi-camera viewer** — camera overview, one focused console, responsive controls.
 - 🏠 **Private by design** — LAN or Meshnet; any host can serve the static viewer.
 
 <p align="center">
@@ -45,6 +46,7 @@ Then follow [Set up and test Lantern](docs/setup-and-test.md) for the five-step 
 | Household CA, per-phone identities, pairing | [docs/provisioning.md](docs/provisioning.md) |
 | LAN, Meshnet and static hosting | [docs/networking.md](docs/networking.md) |
 | Automated tests and what they prove | [docs/verification.md](docs/verification.md) |
+| Viewer design and multi-camera behavior | [docs/viewer-design.md](docs/viewer-design.md) |
 | Physical-device acceptance checklist | [docs/device-acceptance.md](docs/device-acceptance.md) |
 | Validation receipt | [docs/validation.md](docs/validation.md) |
 | Wire protocol | [docs/protocol.md](docs/protocol.md) |

@@ -174,7 +174,7 @@ function CameraTile({ peer, selected, onSelect }: { peer: SavedPeer; selected: b
 function ActionButton({ icon, label, detail, className = "", ...props }: {
   icon: ReactNode; label: string; detail?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props} className={`action-button ${className}`}><span className="action-icon">{icon}</span><span><strong>{label}</strong>{detail && <small>{detail}</small>}</span></button>;
+  return <button aria-label={label} aria-description={detail} {...props} className={`action-button ${className}`}><span className="action-icon">{icon}</span><span><strong>{label}</strong>{detail && <small>{detail}</small>}</span></button>;
 }
 
 function CameraCard({ peer, onRemove, onExpired, onWarning }: {
@@ -230,7 +230,7 @@ function CameraCard({ peer, onRemove, onExpired, onWarning }: {
             void video.current?.play().then(() => setPlaybackBlocked(false), () => setPlaybackBlocked(true));
           }} />
         <ActionButton icon={<UiIcon src={microphoneIcon} />} label={state.microphonePending ? "Requesting microphone..." : state.microphone ? "Stop talking" : "Talk"}
-          detail={state.microphone ? "Microphone active" : "Push to speak"} className={state.microphone ? "talking" : ""}
+          detail={state.microphone ? "Microphone active" : "Microphone off"} className={state.microphone ? "talking" : ""}
           disabled={!connected || !state.audio || state.microphonePending} aria-pressed={state.microphone} onClick={() => { void connection.setMicrophone(!state.microphone); }} />
         <ActionButton icon={<UiIcon src={cameraIcon} />} label={state.snapshotting ? "Saving..." : "Take snapshot"} detail="Store on camera"
           disabled={state.snapshotting || !state.info?.armed || state.info.capabilities.snapshots === false} onClick={() => { void connection.capture(); }} />
