@@ -37,3 +37,7 @@ The viewer reports current observed people, peak count, sample count, last sampl
 ## Acceptance and operational checks
 
 Install on each supported browser/OS, allow notifications while starting a viewing session, close the app, trigger a real doorbell/person event and verify a visible notification on every subscribed viewer. Repeat with permission denied/revoked, an expired viewer grant, an offline phone, OS force-stop and a provider outage. Test notification click navigation and microphone inactivity. Use `docs/device-acceptance.md`; browser permission fixtures do not prove vendor or physical-OS delivery.
+
+Opt-out also takes precedence over an enable request already in flight. Once that
+request settles, the viewer removes any late camera subscription and local push
+registration while retaining the browser's disabled preference.

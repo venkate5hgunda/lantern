@@ -125,3 +125,20 @@ remain pending. Follow [device-acceptance.md](device-acceptance.md).
 
 Person detection, automatic recording, doorbell notifications, encrypted
 peer backup, cloud uploads and owner recognition are not implemented.
+
+## PR review: notification opt-out race — 2026-10-27
+
+Disabling event alerts now cancels an in-flight enable operation and reconciles
+both the camera subscription and browser registration after late completion.
+A regression holds the camera POST open, disables alerts, then releases the POST
+and verifies that the late registration is removed and opt-out stays persisted.
+
+Executed on the PR review checkout: web unit tests (61 passed), TypeScript and
+production web build, Chromium PWA checks (3 passed), coordinator SQL checks
+(6 passed), and provisioning Python checks (7 passed). Android JVM tests (58 passed), lintDebug, assembleDebug and
+assembleDebugAndroidTest also passed. Physical-device instrumentation and vendor
+push delivery were not executed. Browser doubles verify ordering and cancellation, not
+physical push delivery or vendor behavior.
+
+Additional production PWA checks: 12 passed across desktop/mobile WebKit, mobile
+Chromium and TV Chromium profiles. These are browser profiles, not hardware tests.
