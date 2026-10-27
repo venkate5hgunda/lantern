@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+// These protocol/layout fixtures use request routing; PWA behavior is tested separately.
+test.use({ serviceWorkers: "block" });
 
 const origin = "https://door.nord:8443";
 const deviceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -14,7 +16,7 @@ const event = {
 };
 
 async function mockCamera(page: Page, options: { badCode?: boolean; revoked?: boolean; malformed?: boolean } = {}) {
-  await page.route(`${origin}/**`, async (route) => {
+  await page.context().route(`${origin}/**`, async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     const headers = {
@@ -66,7 +68,7 @@ test("loads privately with accessible onboarding and no third-party requests", a
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("A window into home.");
   await expect(page.getByRole("button", { name: "Pair your first camera" })).toBeVisible();
   await page.getByRole("button", { name: "Connection and privacy checklist" }).click();
-  await expect(page.getByText("Peer replication, cloud backup and owner recognition", { exact: false })).toBeVisible();
+  await expect(page.getByText("Encrypted snapshot replication and on-device person detection", { exact: false })).toBeVisible();
   expect(external).toEqual([]);
   expect(errors).toEqual([]);
 });

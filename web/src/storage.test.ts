@@ -33,3 +33,15 @@ describe("session-only credential registry", () => {
     expect(savePeers([peer], unavailable)).toContain("cannot save");
   });
 });
+
+it("remembers authorizations only after explicit opt-in and removes them on opt-out", async () => {
+  const { setRememberViewer, remembersViewer } = await import("./storage");
+  sessionStorage.clear(); localStorage.clear();
+  const peers = [peer];
+  expect(setRememberViewer(true, peers)).toBeNull();
+  expect(remembersViewer()).toBe(true);
+  expect(localStorage.getItem("lantern.peers.v1")).toContain(peer.token);
+  expect(setRememberViewer(false, peers)).toBeNull();
+  expect(remembersViewer()).toBe(false);
+  expect(localStorage.getItem("lantern.peers.v1")).toBeNull();
+});

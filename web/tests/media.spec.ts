@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+// These protocol/layout fixtures use request routing; PWA behavior is tested separately.
+test.use({ serviceWorkers: "block" });
 import { ReferenceCamera } from "./reference-camera";
 
 const cameras: ReferenceCamera[] = [];

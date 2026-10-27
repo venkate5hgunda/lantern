@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  ErrorSchema, EventSchema, EventsSchema, HeartbeatSchema, InfoSchema,
+  BackupStatusSchema, ReplicaHistorySchema, NotificationConfigSchema, AnalyticsSchema, ErrorSchema, EventSchema, EventsSchema, HeartbeatSchema, InfoSchema, DoorbellSchema, StorageStatusSchema,
   PairSchema, SessionSchema, normalizeOrigin,
 } from "./protocol";
 
@@ -153,11 +153,32 @@ export class PeerApi {
 
   events(signal?: AbortSignal) { return this.request("/api/v1/events", EventsSchema, {}, signal); }
 
+  doorbell(signal?: AbortSignal) { return this.request("/api/v1/doorbell", DoorbellSchema, {}, signal); }
+  acknowledgeRing(id: string, signal?: AbortSignal) {
+    return this.request(`/api/v1/doorbell/${z.string().uuid().parse(id)}/ack`, z.void(), { method: "POST" }, signal);
+  }
+  storage(signal?: AbortSignal) { return this.request("/api/v1/storage", StorageStatusSchema, {}, signal); }
+
+  notificationConfig(signal?: AbortSignal) { return this.request("/api/v1/notifications", NotificationConfigSchema, {}, signal); }
+  subscribeNotifications(subscription: PushSubscriptionJSON, signal?: AbortSignal) {
+    return this.request("/api/v1/notifications", z.void(), { method: "POST", body: JSON.stringify(subscription) }, signal);
+  }
+  unsubscribeNotifications(signal?: AbortSignal) { return this.request("/api/v1/notifications", z.void(), { method: "DELETE" }, signal); }
+  analytics(signal?: AbortSignal) { return this.request("/api/v1/analytics", AnalyticsSchema, {}, signal); }
+
   capture(signal?: AbortSignal) {
     return this.request("/api/v1/events", EventSchema, { method: "POST" }, signal);
   }
 
+  backupStatus(signal?: AbortSignal) { return this.request("/api/v1/backup-status", BackupStatusSchema, {}, signal); }
+  replicas(signal?: AbortSignal) { return this.request("/api/v1/replica-events", ReplicaHistorySchema, {}, signal); }
+  async replicaSnapshot(id: string, signal?: AbortSignal): Promise<Blob> {
+    return this.downloadSnapshot(`/api/v1/replica-events/${z.string().regex(/^[0-9a-f]{64}$/).parse(id)}/snapshot`, signal);
+  }
   async snapshot(id: string, signal?: AbortSignal): Promise<Blob> {
+    return this.downloadSnapshot(`/api/v1/events/${z.string().uuid().parse(id)}/snapshot`, signal);
+  }
+  private async downloadSnapshot(path: string, signal?: AbortSignal): Promise<Blob> {
     const abort = new AbortController();
     const forwardAbort = () => abort.abort(signal?.reason);
     if (signal?.aborted) forwardAbort();
@@ -166,7 +187,7 @@ export class PeerApi {
     try {
       let response: Response;
       try {
-        response = await fetch(`${this.origin}/api/v1/events/${z.string().uuid().parse(id)}/snapshot`, {
+        response = await fetch(`${this.origin}${path}`, {
           headers: this.token ? { Authorization: `Bearer ${this.token}` } : {},
           credentials: "omit", cache: "no-store", redirect: "error",
           referrerPolicy: "no-referrer", signal: abort.signal,
@@ -185,7 +206,7 @@ export class PeerApi {
         await response.body?.cancel();
         throw new Error("Camera returned an unsupported snapshot format.");
       }
-      const bytes = await readBoundedBody(response, 5_242_880);
+      const bytes = await readBoundedBody(response, 8 * 1024 * 1024);
       if (bytes.length < 3 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) {
         throw new Error("Camera returned invalid JPEG data.");
       }

@@ -10,14 +10,14 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:4173", trace: "retain-on-failure" },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "media.navigator.streams.fake": true, "media.navigator.permission.disabled": true } } } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
     { name: "mobile-webkit", use: { ...devices["iPhone 13"] } },
     { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
     { name: "tv-chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1920, height: 1080 } } },
   ],
   webServer: {
-    command: "npm exec vite preview -- --host 127.0.0.1 --port 4173 --strictPort",
+    command: "node tests/static-server.mjs",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: false,
     timeout: 30_000,

@@ -1,0 +1,53 @@
+# Network setup and operations
+
+## Reproducible starting point
+
+Start with the root README and `docs/build.md` for exact prerequisites. Build the static viewer before the Android APK. Install the APK on each Android 10+ phone. Keep the household CA private key on the provisioning computer; transfer only each phone's PKCS#12 identity to that phone and the public CA certificate to viewers. Follow `docs/provisioning.md` and `docs/setup-and-test.md` for the complete commands and trust-store steps.
+
+Each phone needs a stable reachable LAN/VPN address covered by its certificate. Reserve LAN addresses or use stable private DNS. Open camera HTTPS TCP 8443, camera STUN UDP 8444 and the direct ICE media path only within the intended LAN/VPN. The media path uses negotiated UDP sockets, so opening just the HTTPS port does not establish WebRTC connectivity. Do not port-forward cameras to the public internet. Check IPv4 and IPv6 separately. Meshnet/VPN provides routing, not HTTPS trust or camera authorization.
+
+## First and second camera checklist
+
+1. Install, name, import identity, grant camera/microphone permissions, then explicitly start capture.
+2. Trust the public CA on the viewer device and visit the camera HTTPS address to verify trust.
+3. Approve the exact static viewer origin on the phone. Camera-hosted and independently hosted viewers are different origins.
+4. Generate a fresh six-digit code on the phone and pair the browser. Watch real video before marking setup complete.
+5. Start an audio session, explicitly Listen and Talk, and verify acoustics in both directions; stop and verify microphone release.
+6. Save, reload and download a snapshot. Revoke a disposable viewer and confirm access fails.
+7. Repeat independently for the second phone. Losing either camera must not disconnect the other.
+
+## Hidden review and controls
+
+Open `/review.html` next to the normal viewer `index.html`. This is an unlisted URL, not a protected admin area. It contains public product documents and browser-only preferences. It never stores a household key or grants extra phone permissions. Review preferences last for the browser tab session; camera setup/arming and recording controls remain on the phone. Rebuild the viewer and APK to update embedded documents.
+
+## Foreground doorbell milestone
+
+Press Ring on the local phone. Paired visible viewers poll compatible phones every five seconds and display recent unanswered rings. Answer starts a normal audio-capable WebRTC session; Listen and Talk remain deliberate controls. Acknowledgement dismisses the ring across viewers. Reloading or reopening the viewer shows only recent unacknowledged rings. Compatible viewers can now opt into encrypted Web Push for doorbell and person events. Watch/Answer asks for notification permission on the viewing gesture; every authorized viewer subscribes independently. See [PWA and alerts](notifications-pwa.md) for installation, permission denial, delivery limits and disabling alerts.
+
+## Rolling snapshot milestone
+
+Enable automatic snapshots in Android camera settings. Capture occurs once per minute while armed, without an open viewer. Pause or stop ends automatic capture. The initial policy retains at most 200 snapshots, 7 days and 128 MiB, while reserving 64 MiB free space. The earliest applicable limit wins; the setting is not a guaranteed seven-day history. At one image/minute, the 200-item cap holds roughly three hours twenty minutes. These are still images. Optional camera backups replicate these snapshots; see [pairing and recovery](peer-backups.md). Low disk space rejects captures and must be surfaced in storage diagnostics.
+
+## Updates and recovery
+
+Save build/version and validation evidence before installing an update. Rebuild viewer assets before APK assembly. Use the same application ID and signing identity to preserve private storage. Android uninstall removes app-private evidence; do not use uninstall as an upgrade or recovery procedure. Pair cameras explicitly under Manage redundant camera backups, then verify copies in the viewer. A second viewer pairing alone does not configure redundancy. Download recovered snapshots from the receiving camera even when the source is offline; complete device-state restore and continuous video remain planned.
+
+After a process kill/reboot, reopen the app, inspect health and explicitly arm it. Verify a new snapshot and live stream. Check certificate expiry and approved origins if HTTPS/pairing breaks. Check permission, foreground notification and OEM battery settings if capture stops. Check VPN remote-access grants and UDP routing if HTTPS works but video does not.
+
+## Qualification before relying on a deployment
+
+Execute `docs/device-acceptance.md` on the intended physical devices and network. Browser reference peers and emulators prove particular software paths; they do not qualify phone acoustics, OEM power management, trust-store installation or private routing. Video and advanced recognition remain planned. Newly implemented snapshot backups, person detection and Web Push still require the physical qualification gates.
+
+## Ambient camera screen
+
+The phone's **Ambient display with significant-motion wake** setting defaults on. Leave Lantern open on its armed camera page: after 30 seconds of quiet, it shows a black screen with a dim moving clock. Tap or produce significant movement in the scene to return to controls. It re-dims after another quiet period. System brightness/timeout returns when leaving the app or disabling the option. The clock changes position every 30 seconds to spread static pixel exposure; the live preview is detached while ambient.
+
+This is an in-app lock-screen style, not Android's secure lock screen. Pressing the hardware power/lock button still invokes the system lock; background motion does not bypass it. Enable person detection in camera settings to add confirmed-person wake and event snapshots. Detection runs on the phone every two seconds while armed; severe thermal load pauses it. Test actual display brightness, orientation, long-running capture and motion sensitivity on your phones; software cannot guarantee prevention of OLED burn-in.
+
+## Install the viewer
+
+Open the HTTPS viewer, use its Install action when offered, or the browser's Install/Add to Home Screen menu. The cached shell opens without internet; live cameras still need their reachable network. Use Remember cameras on this device only on trusted devices. Tap Watch to start a viewing session and request supported notification permission. There is no generic browser permission for unlimited background execution; service-worker push provides background event handling under OS policy. On iPhone, install to the Home Screen before enabling push.
+
+## Installable Android builds
+
+Use the signed APK from GitHub Releases. Follow [release installation and update guidance](../releases.md), verify checksum/signing identity and preserve evidence before changing from a debug installation. Release and debug signatures differ. Future tag automation is prepared but remains gated until repository signing secrets are configured by the owner.

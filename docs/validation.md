@@ -1,4 +1,43 @@
-# Validation receipt
+# Current validation — 21 October 2026
+
+Managed Linux workspace, JDK 17, Android SDK API 35 and Node 24. The PWA viewer, per-viewer encrypted event push, optional local person detection and bidirectional encrypted snapshot replication are implemented. This receipt supersedes feature-status claims in older receipts.
+
+- 60 viewer unit tests and the production TypeScript/Vite build pass. Output includes both HTML entrypoints, manifest, icons and versioned service worker. Both HTML pages are explicitly precached; camera API/media responses are excluded.
+- All 102 browser cases pass across Chromium, Firefox, WebKit and mobile/TV viewport profiles. Checks cover real encoded WebRTC, accessibility, PWA cache/offline launch, remembered-camera opt-in, notification consent/subscription and independent replica downloads. Notification tests use API doubles, not live push vendors. WebKit uses a real origin socket outage because native offline emulation fails even for a minimal literal-response worker in this environment.
+- 58 Android JVM tests pass, including the RFC 8291 encryption golden vector, VAPID signatures, durable viewer fan-out/revocation/retry, presence policy, metadata migration and actual SQLite/filesystem encrypted replication with lost commits, restart, quotas, newer-evidence preservation under old retries and corruption repair.
+- Android lint and debug application/instrumentation APK assembly pass. The pinned EfficientDet Lite0 checksum and viewer entrypoints are checked before Android build. Model instrumentation is compiled, not executed.
+- The dependency audit identified Vite build-tool advisories; the pinned version was updated from 7.3.6 to 7.3.7 and the audit now reports zero vulnerabilities.
+- Seven provisioning tests and six coordinator SQL tests pass. The coordinator remains a local foundation; the static review Site does not deploy managed phone enrollment or signaling.
+
+No physical Android model inference/accuracy, OEM background lifetime, OLED behavior, actual push-vendor delivery, network backup soak or power-loss qualification was performed. Background push needs browser permission, platform support and internet access. Replication is eventual while peers are reachable and covers bounded JPEG snapshots. Continuous video, unique-person/face recognition and suspicious-activity classification remain planned. Complete the device acceptance checklist before relying on these features.
+
+## Android release publication
+
+Published [v0.2.0-alpha.1](https://github.com/venkate5hgunda/lantern/releases/tag/v0.2.0-alpha.1) from source `3d749e2d148a1c949565986fb4d9f20f932136d6`. [GitHub-hosted publication run](https://github.com/venkate5hgunda/lantern/actions/runs/39554507313) succeeds. All four remote asset digests match; the public 87,664,922-byte APK download independently matches SHA-256 `3937cf3b83d09948ea26f91c8027c1b02a1d956a3c933e0e327eab89cf126b41` and passes signature verification. The temporary upload branch was deleted after publication.
+
+Release lint, all 58 native unit tests and signed release/instrumentation APK assembly pass. APK signature v2 verifies with the dedicated RSA-3072 release key; packaging verifies all embedded web bytes, version and non-debuggable status. Checksum verification passes for the APK and both public receipts. The release packager rejects a debug APK. Actionlint 1.7.7 validates the workflow; 24 PWA/review browser cases and 60 viewer unit tests pass after adding release guidance.
+
+The signed `v0.2.0-alpha.1` prerelease uses version code 2 and a dedicated stable release signing key. Private key material stays outside the repository and public release assets. Repository Actions secrets are inaccessible to the connected integration (HTTP 403); tag automation is prepared and disabled until the owner configures signing secrets. Publication uses the locally verified release build and a GitHub-hosted uploader that verifies source/tag, APK signature, version and local/remote digests. Direct CLI upload failed because the managed environment provides GitHub API proxy credentials but not upload-host credentials. Certificate verification uses standard PEM bytes across Android SDK versions. Full hosted build-from-tag execution and physical install/update compatibility remain separate gates.
+
+# Previous validation — 20 October 2026
+
+Managed Linux workspace, JDK 17 / Android SDK API 35 / Node 24. This receipt supersedes current-feature status in the historical receipt below; historical hardware results remain dated evidence, not re-executed checks.
+
+- 56 viewer unit tests pass and the standard `npm run build` succeeds, producing `index.html`, `review.html` and shared assets.
+- All 78 Playwright cases pass across Chromium, Firefox, WebKit, mobile WebKit, mobile Chromium and TV Chromium layouts. They include actual encoded WebRTC video/audio, microphone release, capability-gated doorbell acknowledgement, local storage reporting, review controls, keyboard layout and automated accessibility checks.
+- 46 Android JVM tests pass, including populated v1 storage migration, age/byte/count/free-space retention, recovery, persisted doorbell cooldown/acknowledgement, motion/noise/exposure filtering and ambient timeout behavior.
+- Android lint and debug app/instrumentation APK assembly succeed. Both viewer entrypoints are required before every Android pre-build.
+- Seven provisioning tests pass. Six coordinator tests pass using the actual initial SQL schema and Node SQLite through a D1 adapter (`node coordinator/worker.test.mjs`).
+
+The pinned Rollup tree-shaking pass stalled in this environment. The repository now explicitly disables that pass so the normal documented production build completes; type checking and bundling still run. No dependency versions were changed.
+
+Firefox originally failed on empty end-of-candidates markers; the viewer now ignores them. The remaining lab audio failure was a synthetic Web Audio oscillator waiting for an unavailable OS output device. The Firefox fixture now uses its standard fake microphone device instead, while assertions still verify real RTP packets and track shutdown. This does not qualify physical acoustics or permission prompts.
+
+No physical Android device, emulator instrumentation execution, real OLED display, keyguard wake, OEM process lifetime, LAN/VPN route, NAT/TURN service, person model or backup restore was qualified in this workspace. Ambient UI is compiled and its policies tested; physical dimming/motion/display behavior remains in the device checklist. New recognition and recording/backup capabilities remain disabled/planned.
+
+The Sites registry/signaling code is a locally tested backend foundation only. Native enrollment/polling, the authenticated viewer transport, hosted migrations and Sites phone-access authentication remain integration gates. The private review Site publishes the static viewer/documents, not the coordinator. Current camera setup still requires the direct/local identity flow.
+
+# Historical validation — 4 October 2026
 
 Executed on 4 October 2026 on an Apple Silicon macOS host. This is a
 development-prototype receipt, not certification of the intended household.
@@ -86,3 +125,20 @@ remain pending. Follow [device-acceptance.md](device-acceptance.md).
 
 Person detection, automatic recording, doorbell notifications, encrypted
 peer backup, cloud uploads and owner recognition are not implemented.
+
+## PR review: notification opt-out race — 2026-10-27
+
+Disabling event alerts now cancels an in-flight enable operation and reconciles
+both the camera subscription and browser registration after late completion.
+A regression holds the camera POST open, disables alerts, then releases the POST
+and verifies that the late registration is removed and opt-out stays persisted.
+
+Executed on the PR review checkout: web unit tests (61 passed), TypeScript and
+production web build, Chromium PWA checks (3 passed), coordinator SQL checks
+(6 passed), and provisioning Python checks (7 passed). Android JVM tests (58 passed), lintDebug, assembleDebug and
+assembleDebugAndroidTest also passed. Physical-device instrumentation and vendor
+push delivery were not executed. Browser doubles verify ordering and cancellation, not
+physical push delivery or vendor behavior.
+
+Additional production PWA checks: 12 passed across desktop/mobile WebKit, mobile
+Chromium and TV Chromium profiles. These are browser profiles, not hardware tests.

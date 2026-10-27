@@ -74,3 +74,10 @@ Record actual device, OS/firmware, browser version, network and result.
 
 Person detection, replication/recovery, doorbell notifications, cloud uploads
 and owner recognition need their own acceptance tests when implemented.
+
+## PWA, person events and replicated history
+
+- Install the PWA on Android Chrome and iPhone Home Screen; reopen offline, then restore camera connectivity. Verify remembered cameras only persist after explicit opt-in and are erased on opt-out.
+- Deny notifications and confirm video still works. Allow them on two separate viewer devices, close the viewers and trigger a person event and doorbell. Verify both receive alerts, clicks focus the right camera, disabling stays disabled on Watch, and revocation stops delivery. Test vendor outage, internet loss, expiry and OS background restrictions.
+- Execute `PersonModelTest` on Android. Test real people at expected distances, low light, empty scenes and false positives. Verify debounce, confidence, snapshot orientation, foreground ambient wake, thermal pause and recovery during a long soak. Counts represent observed presence, not unique identities.
+- Pair two cameras in both directions. Verify encrypted replicas, interrupted transfer/restart, duplicate retry, corrupted-copy repair, source-offline downloads, quota/free-space limits, certificate mismatch, clock skew, unlink/re-pair and power loss. Verify UI never labels pending copies as protected. Record convergence time and evidence loss under each outage.

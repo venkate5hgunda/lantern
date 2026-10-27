@@ -32,6 +32,11 @@ export const InfoSchema = z.object({
     audio: z.boolean(),
     snapshots: z.boolean(),
     personDetection: z.boolean(),
+    doorbell: z.boolean().optional(),
+    pushNotifications: z.boolean().optional(),
+    analytics: z.boolean().optional(),
+    peerBackup: z.boolean().optional(),
+    rollingSnapshots: z.boolean().optional(),
   }),
 });
 export type PeerInfo = z.infer<typeof InfoSchema>;
@@ -50,14 +55,14 @@ export const EventSchema = z.object({
   id: uuid,
   deviceId: uuid,
   createdAt: timestamp,
-  trigger: z.enum(["manual", "person"]),
+  trigger: z.enum(["manual", "person", "scheduled"]),
   confidence: z.number().finite().min(0).max(1).nullable(),
   snapshotPath: z.string(),
 }).superRefine((event, context) => {
   if (event.snapshotPath !== `/api/v1/events/${event.id}/snapshot`) {
     context.addIssue({ code: "custom", message: "Invalid snapshot path" });
   }
-  if ((event.trigger === "manual") !== (event.confidence === null)) {
+  if ((event.trigger !== "person") !== (event.confidence === null)) {
     context.addIssue({ code: "custom", message: "Invalid detection confidence" });
   }
 });
@@ -84,3 +89,26 @@ export const SavedPeersSchema = z.array(SavedPeerSchema).max(16).refine(
 export function describeError(error: unknown): string {
   return error instanceof Error ? error.message : "An unexpected operation failed.";
 }
+
+export const DoorbellSchema = z.object({
+  deviceId: uuid,
+  rings: z.array(z.object({ id: uuid, createdAt: timestamp, acknowledged: z.boolean() })).max(50),
+});
+export type Doorbell = z.infer<typeof DoorbellSchema>;
+export const StorageStatusSchema = z.object({
+  kind: z.literal("snapshots"), items: z.number().int().nonnegative(), bytes: z.number().int().nonnegative(),
+  maxItems: z.number().int().positive(), maxBytes: z.number().int().positive(),
+  maxAgeSeconds: z.number().int().positive(), reserveBytes: z.number().int().nonnegative(),
+  availableBytes: z.number().int().nonnegative(), automaticSnapshots: z.boolean(), error: z.string().nullable(),
+});
+export type StorageStatus = z.infer<typeof StorageStatusSchema>;
+
+export const NotificationConfigSchema = z.object({ publicKey: z.string().regex(/^[A-Za-z0-9_-]{87}$/), registered: z.boolean(), pending: z.number().int().nonnegative() });
+export const AnalyticsSchema = z.object({ deviceId: uuid, enabled: z.boolean(), available: z.boolean(), present: z.boolean(), people: z.number().int().nonnegative(), peakPeople: z.number().int().nonnegative(), observations: z.number().int().nonnegative(), lastSeen: timestamp.nullable(), sampledAt: timestamp.nullable(), error: z.string().nullable(), model: z.string(), window: z.string() });
+export const BackupStatusSchema = z.object({
+  desired: z.number().int().nonnegative(), quotaBytes: z.number().int().positive(), replicaBytes: z.number().int().nonnegative(),
+  targets: z.array(z.object({ deviceId: uuid, origin: z.string(), lastSync: timestamp.nullable(), verified: z.number().int().nonnegative(), pending: z.number().int().nonnegative(), error: z.string().nullable() })).max(4),
+});
+export const ReplicaHistorySchema = z.object({ replicas: z.array(z.object({
+  id: z.string().regex(/^[0-9a-f]{64}$/), evidence: z.object({ sourceDeviceId: uuid, eventId: uuid, created: z.number().int().positive(), trigger: z.enum(["manual", "scheduled", "person"]), confidence: z.number().finite().min(0).max(1).nullable(), plainBytes: z.number().int().positive().max(8 * 1024 * 1024), sha256: z.string().regex(/^[0-9a-f]{64}$/) }),
+})).max(50) });
