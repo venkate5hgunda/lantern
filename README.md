@@ -4,6 +4,8 @@
 
 **Your cameras. Your network.** Autonomous Android cameras with a direct browser viewer — no household server, no cloud, no relay.
 
+[Open the viewer](https://venkate5hgunda.github.io/lantern/)
+
 ![Android 10+](https://img.shields.io/badge/Android-10%2B-3ddc84?style=for-the-badge)
 ![WebRTC](https://img.shields.io/badge/WebRTC-direct-b9e8bd?style=for-the-badge&labelColor=121815)
 ![Status: prototype](https://img.shields.io/badge/status-prototype-f5a00b?style=for-the-badge)
@@ -25,6 +27,7 @@
 
 <p align="center">
   <img src="docs/images/viewer-mobile.png" alt="Viewer on a phone" width="28%">
+  <img src="docs/images/viewer-tablet.png" alt="Viewer on a tablet" width="36%">
 </p>
 
 ## 🚀 Quick start
@@ -47,6 +50,7 @@ Then follow [Set up and test Lantern](docs/setup-and-test.md) for the five-step 
 | LAN, Meshnet and static hosting | [docs/networking.md](docs/networking.md) |
 | Automated tests and what they prove | [docs/verification.md](docs/verification.md) |
 | Viewer design and multi-camera behavior | [docs/viewer-design.md](docs/viewer-design.md) |
+| Cloud resume instructions and pending work | [docs/cloud-handoff.md](docs/cloud-handoff.md) |
 | Physical-device acceptance checklist | [docs/device-acceptance.md](docs/device-acceptance.md) |
 | Validation receipt | [docs/validation.md](docs/validation.md) |
 | Wire protocol | [docs/protocol.md](docs/protocol.md) |
