@@ -67,3 +67,35 @@ test("passes WCAG automated checks before and after pairing", async ({ page }) =
   await camera.install();
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
 });
+
+test("switching cameras closes live media and releases the transmitting microphone", async ({ page }) => {
+  test.setTimeout(70_000);
+  const camera = new ReferenceCamera(page); cameras.push(camera);
+  await camera.install();
+  const garage = {
+    origin: "https://garage.nord:8443", deviceId: "22222222-2222-4222-8222-222222222222",
+    name: "Garage", token: "g".repeat(43), expiresAt: "2099-01-01T00:00:00Z",
+  };
+  await page.route(`${garage.origin}/**`, async (route) => {
+    const body = new URL(route.request().url()).pathname === "/api/v1/info"
+      ? { apiVersion: 1, deviceId: garage.deviceId, name: garage.name, armed: true,
+        capabilities: { video: true, audio: true, snapshots: true, personDetection: false } }
+      : { events: [] };
+    await route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "http://127.0.0.1:4173" },
+      contentType: "application/json", body: JSON.stringify(body) });
+  });
+  await page.evaluate((saved) => {
+    const peers = JSON.parse(sessionStorage.getItem("lantern.peers.v1") ?? "[]");
+    sessionStorage.setItem("lantern.peers.v1", JSON.stringify([...peers, saved]));
+  }, garage);
+  await page.reload();
+  await page.getByRole("button", { name: "Connect with audio", exact: true }).click();
+  await expect(page.getByText("LIVE", { exact: true })).toBeVisible({ timeout: 40_000 });
+  await page.getByRole("button", { name: "Talk", exact: true }).click();
+  await expect.poll(() => camera.audioPackets).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Garage, Armed" }).click();
+  await expect(page.getByRole("article", { name: "Garage camera" })).toBeVisible();
+  await expect.poll(() => camera.sessionCount).toBe(0);
+  expect(await page.evaluate(() => window.lanternTestMicrophone.tracks.every((track) => track.readyState === "ended"))).toBe(true);
+  await expect(page.getByRole("article", { name: "Media camera camera" })).toHaveCount(0);
+});

@@ -1,7 +1,55 @@
 # Validation receipt
 
-Executed on 4 October 2026 on an Apple Silicon macOS host. This is a
-development-prototype receipt, not certification of the intended household.
+These are development-prototype receipts, not certification of the intended
+household.
+
+## 30 October 2026 — release review
+
+Rechecked the redesign against main, including selected-console lifecycle,
+microphone/session cleanup, tab credential persistence, action accessibility,
+relative assets and deployment paths. No release-blocking finding remained.
+All 55 unit tests, the production build and all 72 browser cases passed again
+(20.7 seconds for the browser suite). All 59 documentation links resolved.
+The first browser launch was blocked by the local sandbox listener policy;
+the approved run outside that sandbox passed. README now includes desktop,
+phone and tablet screenshots, the hosted viewer link and cloud handoff.
+The Pages workflow builds only the static viewer and runs unit tests before
+deployment. Physical acceptance and APK qualification remain as listed below.
+
+## 25 October 2026 — viewer redesign
+
+The production viewer build and all 55 viewer unit tests passed. The final
+complete browser run passed all 72 cases across desktop Chromium, Firefox,
+WebKit, iPhone-layout WebKit, Pixel-layout Chromium and TV-layout Chromium.
+This includes 48 protocol/interaction cases, 18 real encoded-media cases and
+six automated WCAG cases. Camera switching was also exercised while the
+microphone was transmitting: the previous session closed and its microphone
+tracks ended in every profile.
+
+The first executable browser run found footer contrast below WCAG AA and an
+ambiguous re-pair action selector. Both were corrected. Visual inspection then
+found tablet overlap/clipping and desktop proportion issues; these were fixed,
+recaptured and followed by another complete passing 72-case run.
+
+The final screenshot flow passed at desktop 1487 × 1058, phone 390 × 844 and
+tablet 768 × 1024 at density 1, with no collected page/console errors. The
+[design QA report](design-qa.md) includes the source, combined comparisons,
+responsive evidence and deliberate protocol-driven adaptations.
+
+Checks used isolated Node 24.22.1 and Playwright 1.55.1 browser binaries under
+the ignored `.tools/` directory. The machine's default Node 26 browser installer
+stalled during extraction; retrying with Node 24 succeeded. The final run used
+the repository's six browser projects against the already-running production
+preview, with duplicate test-server startup disabled in a local-only config.
+
+Android native code was not changed. No new APK, Android tests, physical-phone
+media, certificate trust, Meshnet routing or physical microphone/speaker
+qualification is claimed by this viewer checkpoint. The Android/packaging
+results below are the historical 4 October receipt.
+
+## 4 October 2026 — original baseline
+
+Executed on an Apple Silicon macOS host.
 
 ## Browser and provisioning
 
