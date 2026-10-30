@@ -3,6 +3,19 @@
 These are development-prototype receipts, not certification of the intended
 household.
 
+## 30 October 2026 — release review
+
+Rechecked the redesign against main, including selected-console lifecycle,
+microphone/session cleanup, tab credential persistence, action accessibility,
+relative assets and deployment paths. No release-blocking finding remained.
+All 55 unit tests, the production build and all 72 browser cases passed again
+(20.7 seconds for the browser suite). All 59 documentation links resolved.
+The first browser launch was blocked by the local sandbox listener policy;
+the approved run outside that sandbox passed. README now includes desktop,
+phone and tablet screenshots, the hosted viewer link and cloud handoff.
+The Pages workflow builds only the static viewer and runs unit tests before
+deployment. Physical acceptance and APK qualification remain as listed below.
+
 ## 25 October 2026 — viewer redesign
 
 The production viewer build and all 55 viewer unit tests passed. The final
